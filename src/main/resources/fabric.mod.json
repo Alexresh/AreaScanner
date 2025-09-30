@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "ArenaScanner",
   "description": "",
-  "authors": [],
+  "authors": [obabok, hopper4et],
   "contact": {},
   "license": "All-Rights-Reserved",
   "icon": "assets/arena_scanner/none.png",
