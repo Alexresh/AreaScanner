@@ -22,6 +22,8 @@
   "arenascanner.config.generic.comment.selectedBlocksColor": "todo",
   "arenascanner.config.generic.name.processCooldown": "Chunk scan cooldown",
   "arenascanner.config.generic.comment.processCooldown": "todo",
+  "arenascanner.config.generic.name.lookRandomSelectedBlock": "Looks at random selected block",
+  "arenascanner.config.generic.comment.lookRandomSelectedBlock": "",
   "arenascanner.config.generic.name.mainHotkey": "Open config",
   "arenascanner.config.generic.comment.mainHotkey": "opens this screen",
   "arenascanner.config.generic.name.mainRender": "Main render",

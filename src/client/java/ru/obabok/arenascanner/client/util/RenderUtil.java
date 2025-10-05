@@ -6,6 +6,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.command.argument.EntityAnchorArgumentType;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
 import ru.obabok.arenascanner.Config;
@@ -15,6 +16,7 @@ import ru.obabok.arenascanner.client.mixin.WorldRendererAccessor;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -52,6 +54,13 @@ public class RenderUtil {
         }
     }
 
+    public static void lookRandomSelectedBlock(){
+        try {
+            Random random = new Random();
+            Vec3d pos = renderBlocksList.get(random.nextInt(renderBlocksList.size())).toCenterPos();
+            MinecraftClient.getInstance().player.lookAt(EntityAnchorArgumentType.EntityAnchor.EYES, pos);
+        }catch (Exception ignored){}
+    }
     public static void clearRender(){
         renderBlocksList.clear();
         renderChunksList.clear();

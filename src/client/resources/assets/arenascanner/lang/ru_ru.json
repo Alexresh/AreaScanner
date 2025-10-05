@@ -37,5 +37,7 @@
   "arenascanner.config.hud.name.uncheckedChunksHudColor": "Цвет непросканированных чанков в худе",
   "arenascanner.config.hud.comment.uncheckedChunksHudColor": "",
   "arenascanner.config.hud.name.hudScale": "Масштаб худа",
-  "arenascanner.config.hud.comment.hudScale": "В разработке"
+  "arenascanner.config.hud.comment.hudScale": "В разработке",
+  "arenascanner.config.generic.name.lookRandomSelectedBlock": "Посмотреть на случайный выделенный блок",
+  "arenascanner.config.generic.comment.lookRandomSelectedBlock": ""
 }
