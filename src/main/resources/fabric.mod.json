@@ -4,10 +4,10 @@
   "version": "${version}",
   "name": "ArenaScanner",
   "description": "",
-  "authors": [obabok, hopper4et],
+  "authors": ["obabok", "hopper4et"],
   "contact": {},
   "license": "All-Rights-Reserved",
-  "icon": "assets/arena_scanner/none.png",
+  "icon": "assets/arenascanner/none.png",
   "environment": "client",
   "entrypoints": {
     "client": [

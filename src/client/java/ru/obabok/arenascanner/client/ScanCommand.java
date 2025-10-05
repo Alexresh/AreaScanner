@@ -20,7 +20,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import ru.obabok.arenascanner.client.util.ConfigurationManager;
+import ru.obabok.arenascanner.References;
 import ru.obabok.arenascanner.client.util.FileSuggestionProvider;
 import ru.obabok.arenascanner.client.util.RenderUtil;
 import ru.obabok.arenascanner.client.util.ChunkScheduler;
@@ -51,7 +51,7 @@ public class ScanCommand {
                                         .then(argument("whitelist", StringArgumentType.string()).suggests(new FileSuggestionProvider())
                                                 .executes(context -> {
                                                     worldEaterMode = false;
-                                                    return executeAsync(context.getSource().getWorld(), context.getSource().getPlayer(), BlockBox.create(
+                                                    return executeAsync(context.getSource().getWorld(), BlockBox.create(
                                                                     CBlockPosArgument.getBlockPos(context, "from"),
                                                                     CBlockPosArgument.getBlockPos(context, "to")),
                                                             StringArgumentType.getString(context, "whitelist"));
@@ -59,7 +59,7 @@ public class ScanCommand {
                                 .then(literal("worldEaterMode")
                                         .executes(context -> {
                                             worldEaterMode = true;
-                                            return executeAsync(context.getSource().getWorld(), context.getSource().getPlayer(), BlockBox.create(
+                                            return executeAsync(context.getSource().getWorld(), BlockBox.create(
                                                             CBlockPosArgument.getBlockPos(context, "from"),
                                                             CBlockPosArgument.getBlockPos(context, "to")),
                                                     "");
@@ -85,28 +85,18 @@ public class ScanCommand {
                                                 .executes(context -> removeFromWhitelist(context.getSource().getPlayer(), StringArgumentType.getString(context, "whitelist"), CBlockStateArgument.getBlockState(context, "block").getState().getBlock())))))
                         .then(literal("print")
                                 .then(argument("whitelist", StringArgumentType.string()).suggests(new FileSuggestionProvider())
-                                        .executes(context -> printWhitelist(context.getSource().getPlayer(), StringArgumentType.getString(context, "whitelist"))))))
-                .then(literal("reload_config")
-                        .executes(commandContext -> {
-                            ArenascannerClient.CONFIG = ConfigurationManager.loadConfig();
-                            commandContext.getSource().getPlayer().sendMessage(Text.literal("Reloaded"), false);
-                            return 1;
-                        }))
-                .then(literal("toggle_render").executes(commandContext -> {
-                    RenderUtil.toggleRender(commandContext.getSource().getPlayer());
-                    return 1;
-                })));
+                                        .executes(context -> printWhitelist(context.getSource().getPlayer(), StringArgumentType.getString(context, "whitelist")))))));
 
     }
 
-    private static int executeAsync(ClientWorld world, ClientPlayerEntity player, BlockBox _range, String filename) throws CommandSyntaxException {
+    private static int executeAsync(ClientWorld world, BlockBox _range, String filename) throws CommandSyntaxException {
         stopScan();
         range = _range;
         if (world == null) return 0;
-        whitelist = loadWhitelist(player, filename);
+        whitelist = loadWhitelist(filename);
         if(whitelist == null) return 0;
 
-        RenderUtil.render = true;
+        //RenderUtil.render = true;
         int startChunkX = range.getMinX() >> 4;
         int startChunkZ = range.getMinZ() >> 4;
         int endChunkX = range.getMaxX() >> 4;
@@ -131,7 +121,6 @@ public class ScanCommand {
         selectedBlocks.clear();
         unloadedChunks.clear();
         range = null;
-        RenderUtil.render = false;
         RenderUtil.clearRender();
     }
 
@@ -190,8 +179,8 @@ public class ScanCommand {
     }
 
 
-    private static int addToWhitelist(ClientPlayerEntity player, String filename, Block block){
-        ArrayList<Block> blocks = loadWhitelist(player, filename);
+    public static int addToWhitelist(ClientPlayerEntity player, String filename, Block block){
+        ArrayList<Block> blocks = loadWhitelist(filename);
         if(blocks == null){
             player.sendMessage(Text.literal("blocks is null!"),false);
             return 0;
@@ -207,14 +196,14 @@ public class ScanCommand {
 
         return 1;
     }
-    private static int deleteWhitelist(ClientPlayerEntity player, String filename){
+    public static int deleteWhitelist(ClientPlayerEntity player, String filename){
         Path toFile = Path.of(FileSuggestionProvider.pathToWhitelists, filename + ".txt");
         File file = toFile.toFile();
         file.delete();
         player.sendMessage(Text.literal("Deleted"), false);
         return 1;
     }
-    private static int createWhitelist(ClientPlayerEntity player, String filename){
+    public static int createWhitelist(ClientPlayerEntity player, String filename){
         Path toFile = Path.of(FileSuggestionProvider.pathToWhitelists, filename + ".txt");
         File file = toFile.toFile();
         Path.of(FileSuggestionProvider.pathToWhitelists).toFile().mkdirs();
@@ -228,8 +217,8 @@ public class ScanCommand {
         player.sendMessage(Text.literal("Created"),false);
         return 1;
     }
-    private static int removeFromWhitelist(ClientPlayerEntity player, String filename, Block block){
-        ArrayList<Block> blocks = loadWhitelist(player, filename);
+    public static int removeFromWhitelist(ClientPlayerEntity player, String filename, Block block){
+        ArrayList<Block> blocks = loadWhitelist(filename);
         if(blocks == null){
             player.sendMessage(Text.literal("blocks is null!"),false);
             return 0;
@@ -240,8 +229,8 @@ public class ScanCommand {
         return 1;
     }
 
-    private static int printWhitelist(ClientPlayerEntity player, String filename){
-        ArrayList<Block> blocks = loadWhitelist(player, filename);
+    public static int printWhitelist(ClientPlayerEntity player, String filename){
+        ArrayList<Block> blocks = loadWhitelist(filename);
         if(blocks == null){
             player.sendMessage(Text.literal("blocks is null!"),false);
             return 0;
@@ -252,7 +241,7 @@ public class ScanCommand {
         return 1;
     }
 
-    private static void saveWhitelist(ClientPlayerEntity player, ArrayList<Block> values, String filename){
+    public static void saveWhitelist(ClientPlayerEntity player, ArrayList<Block> values, String filename){
         Path toFile = Path.of(FileSuggestionProvider.pathToWhitelists, filename + ".txt");
         try {
             FileWriter writer = new FileWriter(toFile.toString());
@@ -265,7 +254,7 @@ public class ScanCommand {
 
         }
     }
-    private static ArrayList<Block> loadWhitelist(ClientPlayerEntity player, String filename){
+    public static ArrayList<Block> loadWhitelist(String filename){
         Path toFile = Path.of(FileSuggestionProvider.pathToWhitelists, filename  + ".txt");
         ArrayList<Block> whitelist = new ArrayList<>();
 
@@ -282,7 +271,7 @@ public class ScanCommand {
                 if(Registries.BLOCK.getId(block).toString().equals(fileString)){
                     whitelist.add(block);
                 }else {
-                    player.sendMessage(Text.literal("Unknown block:" + fileString),false);
+                    References.LOGGER.error("Unknown block:" + fileString);
                 }
             }
             reader.close();

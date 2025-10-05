@@ -24,6 +24,7 @@ loom {
 repositories {
     maven {
         url 'https://maven.xpple.dev/maven2'
+        maven { url = 'https://jitpack.io' }
     }
     // Add repositories to retrieve artifacts from in here.
     // You should only use this when depending on other mods because
@@ -39,6 +40,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     include modImplementation("dev.xpple:clientarguments:${project.clientarguments_version}")
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    modImplementation "com.github.sakura-ryoko:malilib:${project.malilib_version}"
 }
 
 processResources {

@@ -2,13 +2,12 @@ package ru.obabok.arenascanner.client.util;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.ChunkPos;
+import ru.obabok.arenascanner.References;
 import ru.obabok.arenascanner.client.ScanCommand;
 
-import java.util.HashSet;
 import java.util.Queue;
 import java.util.concurrent.*;
 
-import static ru.obabok.arenascanner.client.ArenascannerClient.LOGGER;
 
 
 public class ChunkScheduler {
@@ -32,7 +31,7 @@ public class ChunkScheduler {
                 }
 
             }catch (Exception e){
-                e.printStackTrace();
+                References.LOGGER.error(e.getMessage());
             }
 
         }, 0, period, TimeUnit.MILLISECONDS);
