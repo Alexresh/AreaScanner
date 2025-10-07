@@ -1,14 +1,12 @@
 package ru.obabok.arenascanner.client.gui;
 
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.client.MinecraftClient;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
-import ru.obabok.arenascanner.References;
 import ru.obabok.arenascanner.client.ScanCommand;
 import ru.obabok.arenascanner.client.util.FileSuggestionProvider;
 
@@ -17,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Environment(EnvType.CLIENT)
 public class WhitelistSelectorScreen extends Screen {
     private final Screen parent;
     private final int currentPage;
@@ -51,7 +50,7 @@ public class WhitelistSelectorScreen extends Screen {
 
         int y = 30;
         // Поле для создания нового вайтлиста
-        TextFieldWidget newWhitelistField = new TextFieldWidget(textRenderer, width / 2 - 100, y + 20, 150, 20, Text.empty());
+        TextFieldWidget newWhitelistField = new TextFieldWidget(textRenderer, width / 2 - 100, y, 150, 20, Text.empty());
         addDrawableChild(newWhitelistField);
 
         addDrawableChild(ButtonWidget.builder(Text.literal("Back"), btn -> client.setScreen(parent))
@@ -63,30 +62,20 @@ public class WhitelistSelectorScreen extends Screen {
                 ScanCommand.createWhitelist(client.player, name);
                 client.setScreen(new WhitelistSelectorScreen(parent, 0));
             }
-        }).dimensions(width / 2 + 55, y + 20, 60, 20).build());
+        }).dimensions(width / 2 + 55, y, 60, 20).build());
 
-        addDrawableChild(ButtonWidget.builder(Text.literal("WorldEater"), button -> {
-            worldEaterMode = true;
-            selectedWhitelist = "";
-        }).dimensions(width / 2 - 100, y + 45, 150, 20).build());
 
-        y += 70;
+        y += 25;
         for (String filename : pageFiles) {
             String displayName = filename.replace(".txt", "");
             addDrawableChild(ButtonWidget.builder(Text.literal(displayName), button -> {
-                worldEaterMode = false;
-                selectedWhitelist = filename.replace(".txt","");
-
+                client.setScreen(new WhitelistEditorScreen(this, filename, 0));
             }).dimensions(width / 2 - 100, y, 150, 20).build());
 
             addDrawableChild(ButtonWidget.builder(Text.literal("❌"), button -> {
                 ScanCommand.deleteWhitelist(client.player, filename.replace(".txt", ""));
                 client.setScreen(new WhitelistSelectorScreen(parent, currentPage));
             }).dimensions(width / 2 + 55, y, 20, 20).build());
-
-            addDrawableChild(ButtonWidget.builder(Text.literal("🔍"), button -> {
-                client.setScreen(new WhitelistEditorScreen(this, filename, 0));
-            }).dimensions(width / 2 + 80, y, 30, 20).build());
 
             y += 23;
         }
@@ -111,11 +100,14 @@ public class WhitelistSelectorScreen extends Screen {
     }
 
     @Override
+    public boolean shouldPause() {
+        return false;
+    }
+
+    @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         renderBackground(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 10, 0xFFFFFF);
-        if(selectedWhitelist != null)
-            context.drawText(textRenderer, Text.literal("Selected whitelist: " + (worldEaterMode ? "WorldEaterMode" : "") + selectedWhitelist) , 20, 20, Colors.LIGHT_GRAY, true);
 
         super.render(context, mouseX, mouseY, delta);
     }

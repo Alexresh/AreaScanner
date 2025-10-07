@@ -15,6 +15,8 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.registry.Registries;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockBox;
@@ -24,6 +26,7 @@ import ru.obabok.arenascanner.References;
 import ru.obabok.arenascanner.client.util.FileSuggestionProvider;
 import ru.obabok.arenascanner.client.util.RenderUtil;
 import ru.obabok.arenascanner.client.util.ChunkScheduler;
+import ru.obabok.arenascanner.client.util.ScanSaveData;
 
 import java.io.File;
 import java.io.FileReader;
@@ -36,14 +39,14 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 
 
 public class ScanCommand {
-    public static final HashSet<BlockPos> selectedBlocks = new HashSet<>();
-    public static final HashSet<ChunkPos> unloadedChunks = new HashSet<>();
+    public static HashSet<BlockPos> selectedBlocks = new HashSet<>();
+    public static HashSet<ChunkPos> unloadedChunks = new HashSet<>();
     private static ArrayList<Block> whitelist = new ArrayList<>();
     private static BlockBox range;
     public static boolean worldEaterMode = false;
     private static boolean processing = false;
-
-
+    private static long allChunksCounter;
+    private static String currentFilename;
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess commandRegistryAccess) {
 
@@ -97,10 +100,10 @@ public class ScanCommand {
         processing = true;
         range = _range;
         if (world == null) return 0;
-        whitelist = loadWhitelist(filename);
+        currentFilename = filename;
+        whitelist = loadWhitelist(currentFilename);
         if(whitelist == null) return 0;
 
-        //RenderUtil.render = true;
         int startChunkX = range.getMinX() >> 4;
         int startChunkZ = range.getMinZ() >> 4;
         int endChunkX = range.getMaxX() >> 4;
@@ -113,16 +116,38 @@ public class ScanCommand {
                     ChunkScheduler.addChunkToProcess(chunkPos);
                 }
                 unloadedChunks.add(chunkPos);
+                allChunksCounter++;
             }
         }
 
         return 1;
     }
 
-    private static void stopScan(){
+
+    public static void saveState(){
+        ScanSaveData.saveData(new ScanSaveData(selectedBlocks, unloadedChunks, whitelist, range, worldEaterMode, allChunksCounter, currentFilename));
+        stopScan();
+    }
+    public static boolean loadState(){
+        ScanSaveData saveData = ScanSaveData.loadData();
+        if(saveData == null) return false;
+        selectedBlocks = (HashSet<BlockPos>) saveData.selectedBlocks;
+        unloadedChunks = (HashSet<ChunkPos>) saveData.unloadedChunks;
+        whitelist = new ArrayList<>(saveData.whitelist);
+        range = saveData.range;
+        worldEaterMode = saveData.worldEaterMode;
+        allChunksCounter = saveData.allChunksCounter;
+        currentFilename = saveData.currentFilename;
+        processing = true;
+        return true;
+    }
+
+    public static void stopScan(){
         selectedBlocks.clear();
         unloadedChunks.clear();
+        allChunksCounter = 0;
         range = null;
+        currentFilename = null;
         RenderUtil.clearRender();
         processing = false;
     }
@@ -130,6 +155,9 @@ public class ScanCommand {
     public static boolean setRange(BlockBox _range){
         if(!processing) range = _range;
         return !processing;
+    }
+    public static String getCurrentFilename(){
+        return currentFilename;
     }
     public static boolean getProcessing(){
         return processing;
@@ -139,12 +167,15 @@ public class ScanCommand {
         return range;
     }
 
+    public static long getAllChunksCounter(){return allChunksCounter;}
+
     public static void processChunk(ClientWorld world, ChunkPos chunkPos){
         if(range == null || world == null || whitelist == null || chunkPos == null) return;
         if(!world.getChunkManager().isChunkLoaded(chunkPos.x, chunkPos.z)) return;
         if((chunkPos.x >= range.getMinX() >> 4) && (chunkPos.x <= range.getMaxX() >> 4) && (chunkPos.z >= range.getMinZ() >> 4) && (chunkPos.z <= range.getMaxZ() >> 4)){
-            unloadedChunks.remove(chunkPos);
+            //delete destroyed blocks from selected blocks
             updateChunk(chunkPos, world);
+            //add new blocks to selected blocks
             for (int x = 0; x < 16; x++) {
                 for (int y = range.getMinY(); y <= range.getMaxY(); y++) {
                     for (int z = 0; z < 16; z++) {
@@ -153,9 +184,13 @@ public class ScanCommand {
                     }
                 }
             }
+            //remove chunk from processing
+            unloadedChunks.remove(chunkPos);
+            checkProcessing();
         }
     }
 
+    //deletes blocks from selected blocks
     public static void updateChunk(ChunkPos chunkPos, ClientWorld world){
         Iterator<BlockPos> iterator = selectedBlocks.iterator();
         while (iterator.hasNext()) {
@@ -172,8 +207,21 @@ public class ScanCommand {
                 }
             }
         }
+        //checkProcessing();
     }
 
+    private static void checkProcessing(){
+        if(selectedBlocks.isEmpty() && unloadedChunks.isEmpty()) {
+            if(MinecraftClient.getInstance().player != null){
+                MinecraftClient.getInstance().player.sendMessage(Text.literal("Scan finished"),false);
+                MinecraftClient.getInstance().player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+            }
+            stopScan();
+        }
+    }
+
+
+    //adds blocks to selected blocks
     public static void processBlock(BlockPos blockPos, BlockState blockState){
         if(range == null || whitelist == null) return;
         if(blockPos.getX() <= range.getMaxX() && blockPos.getX() >= range.getMinX() &&
@@ -188,6 +236,7 @@ public class ScanCommand {
                 selectedBlocks.add(blockPos);
             }
         }
+        checkProcessing();
     }
     public static Optional<Float> getBlastResistance(BlockState blockState, FluidState fluidState) {
         return blockState.isAir() && fluidState.isEmpty() ? Optional.empty() : Optional.of(Math.max(blockState.getBlock().getBlastResistance(), fluidState.getBlastResistance()));

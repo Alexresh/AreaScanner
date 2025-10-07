@@ -1,8 +1,10 @@
 package ru.obabok.arenascanner.client.util;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import fi.dy.masa.malilib.util.data.Color4f;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
@@ -34,7 +36,7 @@ public class RenderUtil {
         if(ScanCommand.getRange() != null){
             BlockPos pos1 = new BlockPos(ScanCommand.getRange().getMinX(),ScanCommand.getRange().getMinY(), ScanCommand.getRange().getMinZ());
             BlockPos pos2 = new BlockPos(ScanCommand.getRange().getMaxX(),ScanCommand.getRange().getMaxY(), ScanCommand.getRange().getMaxZ());
-            TestRender.renderAreaOutline(pos1, pos2, 2, Color4f.fromColor(Colors.RED), Color4f.fromColor(Colors.GREEN),Color4f.fromColor(Colors.BLUE), MinecraftClient.getInstance());
+            renderAreaOutline(pos1, pos2, 2, Color4f.fromColor(Colors.RED), Color4f.fromColor(Colors.GREEN),Color4f.fromColor(Colors.BLUE), MinecraftClient.getInstance());
         }
 
         if(!renderChunksList.isEmpty() || !renderBlocksList.isEmpty()){
@@ -94,26 +96,20 @@ public class RenderUtil {
     private static void renderBlock1(BlockPos pos, MatrixStack matrices, OutlineVertexConsumerProvider vertexConsumers, Color4f color, float baseScale) {
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         Vec3d cameraPos = camera.getPos();
-        double dist = cameraPos.distanceTo(pos.toCenterPos());
-        // Горизонтальное расстояние (игнорируем Y)
         double dx = pos.getX() + 0.5 - cameraPos.x;
         double dz = pos.getZ() + 0.5 - cameraPos.z;
         double distXZ = Math.sqrt(dx * dx + dz * dz);
-        // Параметры плавного перехода
-
 
         double t = Math.max(0.0, Math.min(1.0, (distXZ - Config.Generic.SELECTED_BLOCKS_MOVE_MIN_DISTANCE.getIntegerValue()) / (Config.Generic.SELECTED_BLOCKS_MOVE_MAX_DISTANCE.getIntegerValue() - Config.Generic.SELECTED_BLOCKS_MOVE_MIN_DISTANCE.getIntegerValue())));
 
-        // Y-позиция: интерполируем между blockY и cameraY
+
         double renderY = MathHelper.lerp(t, pos.getY() + 0.5, cameraPos.y);
 
-        // Масштаб по Y: от baseScale до большого значения
+
         float farHeightScale = 8.0f;
         float scaleY = (float) MathHelper.lerp(t, baseScale, farHeightScale);
 
-        // Масштаб по X и Z:
-        // - Вблизи (t=0): = baseScale → куб
-        // - Вдали (t=1): = уменьшенный, но не слишком
+
         float farWidthScale = Math.max(0.15f, 0.4f / (float)(1.0 + distXZ * 0.03));
         float scaleXZ = (float) MathHelper.lerp(t, baseScale, farWidthScale);
 
@@ -133,17 +129,13 @@ public class RenderUtil {
         return vertexConsumers.getBuffer(RENDER_LAYER);
     }
     private static VertexConsumer setColorFromHex(OutlineVertexConsumerProvider vertexConsumers, String hexColor, String targetHexColor, double distance) {
-        // Максимальная дистанция, при которой цвет полностью меняется на targetHexColor
         final double MAX_DISTANCE = 15.0;
 
-        // Нормализуем дистанцию (0.0 - 1.0)
         double normalizedDistance = Math.min(distance / MAX_DISTANCE, 1.0);
 
-        // Получаем исходный и целевой цвета
         int color1 = getColorFromString(hexColor);
         int color2 = getColorFromString(targetHexColor);
 
-        // Извлекаем компоненты цветов
         int r1 = (color1 >> 24) & 0xff;
         int g1 = (color1 >> 16) & 0xff;
         int b1 = (color1 >> 8) & 0xff;
@@ -154,13 +146,11 @@ public class RenderUtil {
         int b2 = (color2 >> 8) & 0xff;
         int a2 = color2 & 0xff;
 
-        // Интерполируем компоненты цветов
         int r = (int) ((r1 * (1.0 - normalizedDistance)) + (r2 * normalizedDistance));
         int g = (int) ((g1 * (1.0 - normalizedDistance)) + (g2 * normalizedDistance));
         int b = (int) ((b1 * (1.0 - normalizedDistance)) + (b2 * normalizedDistance));
         int a = (int) ((a1 * (1.0 - normalizedDistance)) + (a2 * normalizedDistance));
 
-        // Устанавливаем цвет
         vertexConsumers.setColor(r, g, b, a);
         return vertexConsumers.getBuffer(RENDER_LAYER);
     }
@@ -180,4 +170,93 @@ public class RenderUtil {
     public static void addAllRenderChunks(HashSet<ChunkPos> chunkPos) {
         if(Config.Generic.MAIN_RENDER.getBooleanValue()) renderChunksList.addAll(chunkPos);
     }
+
+    static void startDrawingLines()
+    {
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+    }
+    public static void renderAreaOutline(BlockPos pos1, BlockPos pos2, float lineWidth,
+                                         Color4f colorX, Color4f colorY, Color4f colorZ, MinecraftClient mc)
+    {
+        RenderSystem.lineWidth(lineWidth);
+
+        Vec3d cameraPos = mc.gameRenderer.getCamera().getPos();
+        final double dx = cameraPos.x;
+        final double dy = cameraPos.y;
+        final double dz = cameraPos.z;
+
+        double minX = Math.min(pos1.getX(), pos2.getX()) - dx;
+        double minY = Math.min(pos1.getY(), pos2.getY()) - dy;
+        double minZ = Math.min(pos1.getZ(), pos2.getZ()) - dz;
+        double maxX = Math.max(pos1.getX(), pos2.getX()) - dx + 1;
+        double maxY = Math.max(pos1.getY(), pos2.getY()) - dy + 1;
+        double maxZ = Math.max(pos1.getZ(), pos2.getZ()) - dz + 1;
+
+        drawBoundingBoxEdges((float) minX, (float) minY, (float) minZ, (float) maxX, (float) maxY, (float) maxZ, colorX, colorY, colorZ);
+    }
+    private static void drawBoundingBoxEdges(float minX, float minY, float minZ, float maxX, float maxY, float maxZ, Color4f colorX, Color4f colorY, Color4f colorZ)
+    {
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+        BuiltBuffer meshData;
+
+        startDrawingLines();
+
+        drawBoundingBoxLinesX(buffer, minX, minY, minZ, maxX, maxY, maxZ, colorX);
+        drawBoundingBoxLinesY(buffer, minX, minY, minZ, maxX, maxY, maxZ, colorY);
+        drawBoundingBoxLinesZ(buffer, minX, minY, minZ, maxX, maxY, maxZ, colorZ);
+
+        try
+        {
+            meshData = buffer.end();
+            BufferRenderer.drawWithGlobalProgram(meshData);
+            meshData.close();
+        }
+        catch (Exception ignored) { }
+    }
+    private static void drawBoundingBoxLinesX(BufferBuilder buffer, float minX, float minY, float minZ, float maxX, float maxY, float maxZ, Color4f color)
+    {
+        buffer.vertex(minX, minY, minZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(maxX, minY, minZ).color(color.r, color.g, color.b, color.a);
+
+        buffer.vertex(minX, maxY, minZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(maxX, maxY, minZ).color(color.r, color.g, color.b, color.a);
+
+        buffer.vertex(minX, minY, maxZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(maxX, minY, maxZ).color(color.r, color.g, color.b, color.a);
+
+        buffer.vertex(minX, maxY, maxZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(maxX, maxY, maxZ).color(color.r, color.g, color.b, color.a);
+    }
+
+    private static void drawBoundingBoxLinesY(BufferBuilder buffer, float minX, float minY, float minZ, float maxX, float maxY, float maxZ, Color4f color)
+    {
+        buffer.vertex(minX, minY, minZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(minX, maxY, minZ).color(color.r, color.g, color.b, color.a);
+
+        buffer.vertex(maxX, minY, minZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(maxX, maxY, minZ).color(color.r, color.g, color.b, color.a);
+
+        buffer.vertex(minX, minY, maxZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(minX, maxY, maxZ).color(color.r, color.g, color.b, color.a);
+
+        buffer.vertex(maxX, minY, maxZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(maxX, maxY, maxZ).color(color.r, color.g, color.b, color.a);
+    }
+
+    private static void drawBoundingBoxLinesZ(BufferBuilder buffer, float minX, float minY, float minZ, float maxX, float maxY, float maxZ, Color4f color)
+    {
+        buffer.vertex(minX, minY, minZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(minX, minY, maxZ).color(color.r, color.g, color.b, color.a);
+
+        buffer.vertex(maxX, minY, minZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(maxX, minY, maxZ).color(color.r, color.g, color.b, color.a);
+
+        buffer.vertex(minX, maxY, minZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(minX, maxY, maxZ).color(color.r, color.g, color.b, color.a);
+
+        buffer.vertex(maxX, maxY, minZ).color(color.r, color.g, color.b, color.a);
+        buffer.vertex(maxX, maxY, maxZ).color(color.r, color.g, color.b, color.a);
+    }
+
 }

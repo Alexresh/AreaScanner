@@ -1,5 +1,7 @@
 package ru.obabok.arenascanner.client.gui;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.block.Block;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -13,6 +15,7 @@ import ru.obabok.arenascanner.client.ScanCommand;
 
 import java.util.List;
 
+@Environment(EnvType.CLIENT)
 public class WhitelistEditorScreen extends Screen {
     private final Screen parent;
     private final String filename;
@@ -96,6 +99,11 @@ public class WhitelistEditorScreen extends Screen {
 
         addDrawableChild(ButtonWidget.builder(Text.literal("Back"), btn -> client.setScreen(parent))
                 .dimensions(width / 2 - 40, height - 30, 80, 20).build());
+    }
+
+    @Override
+    public boolean shouldPause() {
+        return false;
     }
 
     @Override
