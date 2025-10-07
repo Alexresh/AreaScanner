@@ -38,9 +38,12 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 public class ScanCommand {
     public static final HashSet<BlockPos> selectedBlocks = new HashSet<>();
     public static final HashSet<ChunkPos> unloadedChunks = new HashSet<>();
-    public static ArrayList<Block> whitelist = new ArrayList<>();
-    public static BlockBox range;
-    private static boolean worldEaterMode = false;
+    private static ArrayList<Block> whitelist = new ArrayList<>();
+    private static BlockBox range;
+    public static boolean worldEaterMode = false;
+    private static boolean processing = false;
+
+
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess commandRegistryAccess) {
 
@@ -89,8 +92,9 @@ public class ScanCommand {
 
     }
 
-    private static int executeAsync(ClientWorld world, BlockBox _range, String filename) throws CommandSyntaxException {
+    public static int executeAsync(ClientWorld world, BlockBox _range, String filename) throws CommandSyntaxException {
         stopScan();
+        processing = true;
         range = _range;
         if (world == null) return 0;
         whitelist = loadWhitelist(filename);
@@ -109,10 +113,8 @@ public class ScanCommand {
                     ChunkScheduler.addChunkToProcess(chunkPos);
                 }
                 unloadedChunks.add(chunkPos);
-
             }
         }
-
 
         return 1;
     }
@@ -122,6 +124,19 @@ public class ScanCommand {
         unloadedChunks.clear();
         range = null;
         RenderUtil.clearRender();
+        processing = false;
+    }
+
+    public static boolean setRange(BlockBox _range){
+        if(!processing) range = _range;
+        return !processing;
+    }
+    public static boolean getProcessing(){
+        return processing;
+    }
+
+    public static BlockBox getRange(){
+        return range;
     }
 
     public static void processChunk(ClientWorld world, ChunkPos chunkPos){

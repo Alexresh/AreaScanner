@@ -7,10 +7,12 @@ import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.command.argument.EntityAnchorArgumentType;
+import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
 import ru.obabok.arenascanner.Config;
 import ru.obabok.arenascanner.References;
+import ru.obabok.arenascanner.client.ScanCommand;
 import ru.obabok.arenascanner.client.mixin.WorldRendererAccessor;
 
 import java.util.EnumSet;
@@ -28,6 +30,13 @@ public class RenderUtil {
     private static final List<ChunkPos> renderChunksList = new CopyOnWriteArrayList<>();
 
     public static void renderAll(WorldRenderContext context) {
+
+        if(ScanCommand.getRange() != null){
+            BlockPos pos1 = new BlockPos(ScanCommand.getRange().getMinX(),ScanCommand.getRange().getMinY(), ScanCommand.getRange().getMinZ());
+            BlockPos pos2 = new BlockPos(ScanCommand.getRange().getMaxX(),ScanCommand.getRange().getMaxY(), ScanCommand.getRange().getMaxZ());
+            TestRender.renderAreaOutline(pos1, pos2, 2, Color4f.fromColor(Colors.RED), Color4f.fromColor(Colors.GREEN),Color4f.fromColor(Colors.BLUE), MinecraftClient.getInstance());
+        }
+
         if(!renderChunksList.isEmpty() || !renderBlocksList.isEmpty()){
             try {
                 context.matrixStack().push();

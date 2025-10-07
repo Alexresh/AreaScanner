@@ -6,8 +6,12 @@ import fi.dy.masa.malilib.gui.button.ButtonBase;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.gui.button.IButtonActionListener;
 import fi.dy.masa.malilib.util.StringUtils;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.math.BlockBox;
 import ru.obabok.arenascanner.Config;
 import ru.obabok.arenascanner.References;
+import ru.obabok.arenascanner.client.ScanCommand;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -29,8 +33,29 @@ public class ConfigGui extends GuiConfigsBase {
         {
             x += this.createButton(x, y, -1, tab) + 2;
         }
-        ButtonGeneric button = new ButtonGeneric(10, getScreenHeight() - 20, -1, 20, "Whitelists");
-        this.addButton(button, (button1, mouseButton) -> openGui(new WhitelistSelectorScreen(this, 0)));
+
+        boolean whitelistSelected = !WhitelistSelectorScreen.selectedWhitelist.isEmpty() || WhitelistSelectorScreen.worldEaterMode;
+
+        ButtonGeneric whitelistsButton = new ButtonGeneric(10, getScreenHeight() - 30, -1, 20, "Whitelists " + (whitelistSelected ? "✔" : "❌"));
+        ButtonGeneric areaEditButton = new ButtonGeneric(80, getScreenHeight() - 30, -1, 20, "Range " + (ScanCommand.getRange() != null ? "✔" : "❌"));
+        if(ScanCommand.getProcessing()){
+            whitelistsButton.setEnabled(false);
+            areaEditButton.setEnabled(false);
+        }
+
+        this.addButton(whitelistsButton, (button1, mouseButton) -> openGui(new WhitelistSelectorScreen(this, 0)));
+        this.addButton(areaEditButton, (button1, mouseButton) -> openGui(new AreaSelectionGui(ScanCommand.getRange() == null ? new BlockBox(MinecraftClient.getInstance().player.getBlockPos()) : ScanCommand.getRange())));
+
+        ButtonGeneric startButton = new ButtonGeneric(135, getScreenHeight() - 30, -1, 20, "Start scan");
+        startButton.setEnabled(ScanCommand.getRange() != null && whitelistSelected);
+        this.addButton(startButton, (button1, mouseButton) -> {
+            try {
+                ScanCommand.worldEaterMode = WhitelistSelectorScreen.worldEaterMode;
+                ScanCommand.executeAsync(client.world, ScanCommand.getRange(), WhitelistSelectorScreen.selectedWhitelist);
+                this.close();
+            }catch (Exception ignored){};
+
+        });
     }
     private int createButton(int x, int y, int width, ConfigGuiTab tab)
     {

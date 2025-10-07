@@ -43,7 +43,7 @@ public class ArenascannerClient implements ClientModInitializer {
         });
 
         ClientChunkEvents.CHUNK_LOAD.register((clientWorld, worldChunk) -> {
-            if(ScanCommand.range != null && ScanCommand.unloadedChunks.contains(worldChunk.getPos()))
+            if(ScanCommand.getRange() != null && ScanCommand.unloadedChunks.contains(worldChunk.getPos()))
                 ChunkScheduler.addChunkToProcess(worldChunk.getPos());
         });
 
