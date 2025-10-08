@@ -10,8 +10,8 @@ import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import ru.obabok.arenascanner.References;
-import ru.obabok.arenascanner.client.ScanCommand;
+import ru.obabok.arenascanner.client.util.References;
+import ru.obabok.arenascanner.client.util.WhitelistsManager;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ public class WhitelistEditorScreen extends Screen {
 
     @Override
     protected void init() {
-        List<Block> currentBlocks = ScanCommand.loadWhitelist(filename);
+        List<Block> currentBlocks = WhitelistsManager.loadWhitelist(filename);
         if(currentBlocks == null){
             client.setScreen(parent);
             References.LOGGER.error("currentBlocks is null");
@@ -45,7 +45,6 @@ public class WhitelistEditorScreen extends Screen {
 
         // Поле ввода блока
         blockInput = new TextFieldWidget(textRenderer, width / 2 - 100, 30, 150, 20, Text.empty());
-        blockInput.setText("");
         addDrawableChild(blockInput);
 
         addDrawableChild(ButtonWidget.builder(Text.literal("Add Block"), button -> {
@@ -55,7 +54,7 @@ public class WhitelistEditorScreen extends Screen {
                 Identifier id = Identifier.tryParse(idStr);
                 if (id != null && Registries.BLOCK.containsId(id)) {
                     Block block = Registries.BLOCK.get(id);
-                    ScanCommand.addToWhitelist(client.player, filename, block);
+                    WhitelistsManager.addToWhitelist(client.player, filename, block);
                     client.setScreen(new WhitelistEditorScreen(parent, filename, 0));
                 }
             } catch (Exception e) {
@@ -72,7 +71,7 @@ public class WhitelistEditorScreen extends Screen {
                     .build());
 
             addDrawableChild(ButtonWidget.builder(Text.literal("❌"), btn -> {
-                ScanCommand.removeFromWhitelist(client.player, filename, block);
+                WhitelistsManager.removeFromWhitelist(client.player, filename, block);
                 client.setScreen(new WhitelistEditorScreen(parent, filename, currentPage));
             }).dimensions(width / 2 + 85, y, 20, 20).build());
 

@@ -8,10 +8,14 @@ import fi.dy.masa.malilib.gui.button.IButtonActionListener;
 import fi.dy.masa.malilib.util.StringUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import ru.obabok.arenascanner.Config;
-import ru.obabok.arenascanner.References;
-import ru.obabok.arenascanner.client.ScanCommand;
+import net.minecraft.block.Blocks;
+import ru.obabok.arenascanner.client.Config;
+import ru.obabok.arenascanner.client.util.References;
+import ru.obabok.arenascanner.client.util.Whitelist;
+import ru.obabok.arenascanner.client.util.WhitelistItem;
+import ru.obabok.arenascanner.client.util.WhitelistsManager;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,9 +38,21 @@ public class ConfigGui extends GuiConfigsBase {
         {
             x += this.createButton(x, y, -1, tab) + 2;
         }
+        ButtonGeneric testBtn = new ButtonGeneric(width - 75, getScreenHeight() - 30, 65, 20, "Test");
+        this.addButton(testBtn, (btn, mousebtn)->{
+            ArrayList<WhitelistItem> items = new ArrayList<>(){
+                {
+                    add(new WhitelistItem(Blocks.OBSIDIAN, null, null, null));
+                    add(new WhitelistItem(null, null, ">9", "!Destroy"));
+                }
+            };
+            openGui(new NewWhitelistEditorScreen(this, "test.json",0));
+
+
+        });
+
 
         ButtonGeneric whitelistsButton = new ButtonGeneric(10, getScreenHeight() - 30, 65, 20, "Whitelists");
-
         this.addButton(whitelistsButton, (button1, mouseButton) -> openGui(new WhitelistSelectorScreen(this, 0)));
         ButtonGeneric taskButton = new ButtonGeneric(85, getScreenHeight() - 30, 40, 20, "Task");
         this.addButton(taskButton, (button1, mouseButton) -> {

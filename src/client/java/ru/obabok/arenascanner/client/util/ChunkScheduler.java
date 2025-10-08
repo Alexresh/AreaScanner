@@ -2,8 +2,7 @@ package ru.obabok.arenascanner.client.util;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.ChunkPos;
-import ru.obabok.arenascanner.References;
-import ru.obabok.arenascanner.client.ScanCommand;
+import ru.obabok.arenascanner.client.Scan;
 
 import java.util.Queue;
 import java.util.concurrent.*;
@@ -24,9 +23,9 @@ public class ChunkScheduler {
                 boolean processing = true;
                 while (processing){
                     ChunkPos chunkPos = chunkQueue.poll();
-                    if (chunkPos != null && MinecraftClient.getInstance().world.getChunkManager().isChunkLoaded(chunkPos.x, chunkPos.z)) {
+                    if (chunkPos != null && MinecraftClient.getInstance().world != null && MinecraftClient.getInstance().world.getChunkManager().isChunkLoaded(chunkPos.x, chunkPos.z)) {
                         processing = false;
-                        ScanCommand.processChunk(MinecraftClient.getInstance().world, chunkPos);
+                        Scan.processChunk(MinecraftClient.getInstance().world, chunkPos);
                     }
                 }
 
@@ -39,8 +38,8 @@ public class ChunkScheduler {
         schedulerRender.scheduleAtFixedRate(() -> {
             try {
                 RenderUtil.clearRender();
-                RenderUtil.addAllRenderBlocks(ScanCommand.selectedBlocks);
-                RenderUtil.addAllRenderChunks(ScanCommand.unloadedChunks);
+                RenderUtil.addAllRenderBlocks(Scan.selectedBlocks);
+                RenderUtil.addAllRenderChunks(Scan.unloadedChunks);
             }catch (Exception ignored){}
 
         }, 0, 1000, TimeUnit.MILLISECONDS);

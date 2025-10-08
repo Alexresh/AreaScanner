@@ -14,8 +14,10 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.ChunkPos;
 
 import ru.obabok.arenascanner.client.handlers.InitHandler;
+import ru.obabok.arenascanner.client.util.HudRender;
 import ru.obabok.arenascanner.client.util.RenderUtil;
 import ru.obabok.arenascanner.client.util.ChunkScheduler;
+import ru.obabok.arenascanner.client.util.ScanCommand;
 
 
 public class ArenascannerClient implements ClientModInitializer {
@@ -43,12 +45,11 @@ public class ArenascannerClient implements ClientModInitializer {
         });
 
         ClientChunkEvents.CHUNK_LOAD.register((clientWorld, worldChunk) -> {
-            if(ScanCommand.getRange() != null && ScanCommand.unloadedChunks.contains(worldChunk.getPos()))
+            if(Scan.getRange() != null && Scan.unloadedChunks.contains(worldChunk.getPos()))
                 ChunkScheduler.addChunkToProcess(worldChunk.getPos());
         });
 
-
-        HudRenderCallback.EVENT.register(HudRender::render);
+        HudRenderCallback.EVENT.register((drawContext, renderTickCounter) -> HudRender.render(drawContext));
         WorldRenderEvents.AFTER_ENTITIES.register(RenderUtil::renderAll);
         ChunkScheduler.startProcessing();
 

@@ -7,8 +7,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
-import ru.obabok.arenascanner.client.ScanCommand;
-import ru.obabok.arenascanner.client.util.FileSuggestionProvider;
+import ru.obabok.arenascanner.client.util.WhitelistsManager;
 
 import java.io.File;
 import java.util.Arrays;
@@ -29,7 +28,7 @@ public class WhitelistSelectorScreen extends Screen {
         this.currentPage = Math.max(0, page);
     }
     public static List<String> getWhitelistFilenames() {
-        File dir = new File(FileSuggestionProvider.pathToWhitelists);
+        File dir = new File(WhitelistsManager.stringWhitelistsPath);
         if (!dir.exists()) dir.mkdirs();
         File[] files = dir.listFiles((d, name) -> name.endsWith(".txt"));
         if (files == null) return List.of();
@@ -59,7 +58,7 @@ public class WhitelistSelectorScreen extends Screen {
         addDrawableChild(ButtonWidget.builder(Text.literal("Create"), button -> {
             String name = newWhitelistField.getText().trim();
             if (!name.isEmpty()) {
-                ScanCommand.createWhitelist(client.player, name);
+                WhitelistsManager.createWhitelist(client.player, name);
                 client.setScreen(new WhitelistSelectorScreen(parent, 0));
             }
         }).dimensions(width / 2 + 55, y, 60, 20).build());
@@ -73,7 +72,7 @@ public class WhitelistSelectorScreen extends Screen {
             }).dimensions(width / 2 - 100, y, 150, 20).build());
 
             addDrawableChild(ButtonWidget.builder(Text.literal("❌"), button -> {
-                ScanCommand.deleteWhitelist(client.player, filename.replace(".txt", ""));
+                WhitelistsManager.deleteWhitelist(client.player, filename.replace(".txt", ""));
                 client.setScreen(new WhitelistSelectorScreen(parent, currentPage));
             }).dimensions(width / 2 + 55, y, 20, 20).build());
 

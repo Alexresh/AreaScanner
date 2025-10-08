@@ -1,8 +1,6 @@
 package ru.obabok.arenascanner.client.gui;
 
-import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.gui.widgets.WidgetBase;
-import fi.dy.masa.malilib.gui.widgets.WidgetDropDownList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -11,10 +9,12 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.TextWidget;
+import net.minecraft.client.sound.PositionedSoundInstance;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.math.BlockBox;
-import ru.obabok.arenascanner.client.ScanCommand;
+import ru.obabok.arenascanner.client.Scan;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,7 @@ import java.util.List;
 @Environment(EnvType.CLIENT)
 public class ScanTaskScreen extends Screen {
     private final Screen parent;
-    WidgetDropDownList<String> whitelistSelectorList;
+    ToggelableWidgedDropDownList<String> whitelistSelectorList;
     private final BlockBox initialBox;
     private TextFieldWidget minX, minY, minZ;
     private TextFieldWidget maxX, maxY, maxZ;
@@ -35,9 +35,9 @@ public class ScanTaskScreen extends Screen {
         super(Text.literal("Scan task screen"));
         this.parent = parent;
         if(MinecraftClient.getInstance().player == null) MinecraftClient.getInstance().setScreen(parent);
-        this.initialBox = ScanCommand.getRange() == null ? new BlockBox(MinecraftClient.getInstance().player.getBlockPos()) : ScanCommand.getRange();
-        if(ScanCommand.getRange() != initialBox){
-            ScanCommand.setRange(initialBox);
+        this.initialBox = Scan.getRange() == null ? new BlockBox(MinecraftClient.getInstance().player.getBlockPos()) : Scan.getRange();
+        if(Scan.getRange() != initialBox){
+            Scan.setRange(initialBox);
         }
     }
 
@@ -53,11 +53,12 @@ public class ScanTaskScreen extends Screen {
         list.addAll((whitelistFiles).stream().map(s -> s.replace(".txt", "")).toList());
 
 
-        whitelistSelectorList = new WidgetDropDownList<>(20,200,160,18,200,10, list);
+        whitelistSelectorList = new ToggelableWidgedDropDownList<>(20,200,160,18,200,10, list);
         whitelistSelectorList.setZLevel(100);
+        whitelistSelectorList.active = !Scan.getProcessing();
         addWidget(whitelistSelectorList);
-        if(ScanCommand.getCurrentFilename() != null){
-            whitelistSelectorList.setSelectedEntry(ScanCommand.getCurrentFilename().isEmpty() ? "WorldEater" : ScanCommand.getCurrentFilename());}
+        if(Scan.getCurrentFilename() != null){
+            whitelistSelectorList.setSelectedEntry(Scan.getCurrentFilename().isEmpty() ? "WorldEater" : Scan.getCurrentFilename());}
 
 
 
@@ -88,7 +89,10 @@ public class ScanTaskScreen extends Screen {
         minZ = createField(x, y, initialBox.getMinZ());
         ButtonWidget btnMinZ = createNudgeButton(x + 60, y);
         coordButtons.add(new CoordButton(btnMinZ, minZ));
-        addDrawableChild(ButtonWidget.builder(Text.literal("Move to player"), btn -> moveToPlayer(true)).position(x - 15, y + 30).size(90, 20).build());
+
+        ButtonWidget moveToPlayer1 = ButtonWidget.builder(Text.literal("Move to player"), btn -> moveToPlayer(true)).position(x - 15, y + 30).size(90, 20).build();
+        moveToPlayer1.active = !Scan.getProcessing();
+        addDrawableChild(moveToPlayer1);
 
         x += 100;
         y = 20;
@@ -96,64 +100,83 @@ public class ScanTaskScreen extends Screen {
         //Corner2
         addDrawableChild(new TextWidget(x, y, 100, 20, Text.literal("Corner 2"), textRenderer).alignCenter());
         x+=20;
+        //maxX
         y+=rowHeight;
         addDrawableChild(new TextWidget(x - 15, y, 15, 20, Text.literal("X:"), textRenderer).alignLeft());
         maxX = createField(x, y, initialBox.getMaxX());
         ButtonWidget btnMaxX = createNudgeButton(x + 60, y);
         coordButtons.add(new CoordButton(btnMaxX, maxX));
 
+        //maxY
         y+=rowHeight;
         addDrawableChild(new TextWidget(x - 15, y, 15, 20, Text.literal("Y:"), textRenderer).alignLeft());
         maxY = createField(x, y, initialBox.getMaxY());
         ButtonWidget btnMaxY = createNudgeButton(x + 60, y);
         coordButtons.add(new CoordButton(btnMaxY, maxY));
 
+        //maxZ
         y+=rowHeight;
         addDrawableChild(new TextWidget(x - 15, y, 15, 20, Text.literal("Z:"), textRenderer).alignLeft());
         maxZ = createField(x, y, initialBox.getMaxZ());
         ButtonWidget btnMaxZ = createNudgeButton(x + 60, y);
         coordButtons.add(new CoordButton(btnMaxZ, maxZ));
-        addDrawableChild(ButtonWidget.builder(Text.literal("Move to player"), btn -> moveToPlayer(false)).position(x - 15, y + 30).size(90, 20).build());
+
+        ButtonWidget moveToPlayer2 = ButtonWidget.builder(Text.literal("Move to player"), btn -> moveToPlayer(false)).position(x - 15, y + 30).size(90, 20).build();
+        moveToPlayer2.active = !Scan.getProcessing();
+        addDrawableChild(moveToPlayer2);
+
+        //Whitelist text
         addDrawableChild(new TextWidget(20, 180, 40, 20, Text.literal("Whitelist"), textRenderer));
 
-
+        //back button
         addDrawableChild(ButtonWidget.builder(Text.literal("Back"), btn -> client.setScreen(parent)).dimensions( 30, height - 30, 50, 20).build());
+
+        //start button
         startButton = ButtonWidget.builder(Text.literal("Start scan"), btn -> {
             try {
-                ScanCommand.worldEaterMode = whitelistSelectorList.getSelectedEntry().equals("WorldEater");
-                ScanCommand.executeAsync(client.world, ScanCommand.getRange(), whitelistSelectorList.getSelectedEntry().equals("WorldEater") ? "" : whitelistSelectorList.getSelectedEntry());
+                Scan.worldEaterMode = whitelistSelectorList.getSelectedEntry().equals("WorldEater");
+                Scan.executeAsync(client.world, Scan.getRange(), whitelistSelectorList.getSelectedEntry().equals("WorldEater") ? "" : whitelistSelectorList.getSelectedEntry());
                 this.close();
             }catch (Exception ignored){};
         }).dimensions( 90, height - 30, 80, 20).build();
-        startButton.active = whitelistSelectorList.getSelectedEntry() != null && !whitelistSelectorList.getSelectedEntry().isEmpty() && ScanCommand.getRange() != null;
+        startButton.active = whitelistSelectorList.getSelectedEntry() != null && !whitelistSelectorList.getSelectedEntry().isEmpty() && Scan.getRange() != null;
         addDrawableChild(startButton);
-        addDrawableChild(ButtonWidget.builder(Text.literal("Stop scan"), btn ->{ScanCommand.stopScan(); client.setScreen(parent);}).dimensions(180, height - 30, 80, 20).build());
-        addDrawableChild(ButtonWidget.builder(Text.literal("Save state"), btn -> {ScanCommand.saveState(); this.close(); }).position(270, height - 30).size(90, 20).build());
-        addDrawableChild(ButtonWidget.builder(Text.literal("Load state"), btn -> {ScanCommand.loadState(); this.close();}).position(370, height - 30).size(90, 20).build());
-    }
 
+        //if(ScanCommand.getProcessing())
 
-    @Override
-    public boolean shouldPause() {
-        return false;
+        ButtonWidget stopScanBtn = ButtonWidget.builder(Text.literal("Stop scan"), btn ->{Scan.stopScan(); this.close();}).dimensions(180, height - 30, 80, 20).build();
+        stopScanBtn.active = Scan.getProcessing();
+        addDrawableChild(stopScanBtn);
+
+        ButtonWidget saveStateBtn = ButtonWidget.builder(Text.literal("Save state"), btn -> {Scan.saveState(); this.close(); }).position(270, height - 30).size(90, 20).build();
+        saveStateBtn.active = Scan.getProcessing();
+        addDrawableChild(saveStateBtn);
+
+        ButtonWidget loadStateBtn = ButtonWidget.builder(Text.literal("Load state"), btn -> {
+            client.player.sendMessage(Text.literal(Scan.loadState() ? "State loaded" : "State didn't load"), true);
+            this.close();
+        }).position(370, height - 30).size(90, 20).build();
+        loadStateBtn.active = !Scan.getProcessing();
+        addDrawableChild(loadStateBtn);
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         int y = height - 100;
         int x = 40;
-        if(ScanCommand.getProcessing()){
+        if(Scan.getProcessing()){
             context.drawTextWithShadow(textRenderer,Text.literal("Scan in process..."), x, y, Colors.WHITE);
-            context.drawTextWithShadow(textRenderer,Text.literal("All chunks: " + ScanCommand.getAllChunksCounter()), x, y += 15, Colors.WHITE);
-            context.drawTextWithShadow(textRenderer,Text.literal("Unchecked chunks: " + ScanCommand.unloadedChunks.size()), x, y += 15, Colors.WHITE);
-            context.drawTextWithShadow(textRenderer,Text.literal("Percent left: " + String.format("%.2f", (double)ScanCommand.unloadedChunks.size() / ScanCommand.getAllChunksCounter() * 100)), x, y+=15, Colors.WHITE);
+            context.drawTextWithShadow(textRenderer,Text.literal("All chunks: " + Scan.getAllChunksCounter()), x, y += 15, Colors.WHITE);
+            context.drawTextWithShadow(textRenderer,Text.literal("Unchecked chunks: " + Scan.unloadedChunks.size()), x, y += 15, Colors.WHITE);
+            context.drawTextWithShadow(textRenderer,Text.literal("Percent left: " + String.format("%.2f", (double)Scan.unloadedChunks.size() / Scan.getAllChunksCounter() * 100)), x, y+=15, Colors.WHITE);
         }else{
             context.drawTextWithShadow(textRenderer,Text.literal("Scan is stopped"), x, y, Colors.WHITE);
         }
+        //for malilib gui
         this.drawWidgets(mouseX, mouseY, context);
         this.drawHoveredWidget(mouseX, mouseY, context);
-        startButton.active = whitelistSelectorList.getSelectedEntry() != null && !whitelistSelectorList.getSelectedEntry().isEmpty() && ScanCommand.getRange() != null;
-        super.render(context, mouseX, mouseY, delta);
+
+        startButton.active = whitelistSelectorList.getSelectedEntry() != null && !whitelistSelectorList.getSelectedEntry().isEmpty() && Scan.getRange() != null;
         context.drawBorder(15,15, 110, 150, Colors.LIGHT_GRAY);
         context.drawBorder(135,15, 110, 150, Colors.LIGHT_GRAY);
         for (CoordButton entry : coordButtons) {
@@ -168,8 +191,9 @@ public class ScanTaskScreen extends Screen {
                 break;
             }
         }
-
+        super.render(context, mouseX, mouseY, delta);
     }
+
 
     public boolean onMouseClicked(int mouseX, int mouseY, int mouseButton)
     {
@@ -238,6 +262,10 @@ public class ScanTaskScreen extends Screen {
     public void blur() {
 
     }
+    @Override
+    public boolean shouldPause() {
+        return false;
+    }
 
     private void moveToPlayer(boolean minCorner){
         if(client==null || client.player == null) return;
@@ -261,6 +289,7 @@ public class ScanTaskScreen extends Screen {
     private TextFieldWidget createField(int x, int y, int value) {
         TextFieldWidget field = new TextFieldWidget(textRenderer, x, y, 60, 18, Text.empty());
         field.setText(String.valueOf(value));
+        field.active = !Scan.getProcessing();
         field.setChangedListener(s -> {
             try {
                 Integer.parseInt(s);
@@ -272,14 +301,17 @@ public class ScanTaskScreen extends Screen {
     }
 
     private ButtonWidget createNudgeButton(int x, int y) {
-        return addDrawableChild(ButtonWidget.builder(Text.literal("±"), button -> {})
-                .position(x, y).size(18, 18).build());
+        ButtonWidget nudgeBtn = ButtonWidget.builder(Text.literal("±"), button -> {})
+                .position(x, y).size(18, 18).build();
+        nudgeBtn.active = !Scan.getProcessing();
+        return addDrawableChild(nudgeBtn);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         for (CoordButton entry : coordButtons) {
             if (entry.button.isMouseOver(mouseX, mouseY)) {
+                playClickSound();
                 int amount = (button == 0) ? 1 : (button == 1 ? -1 : 0);
                 if (amount != 0) {
                     applyNudge(entry.field, amount);
@@ -291,10 +323,16 @@ public class ScanTaskScreen extends Screen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
+    private void playClickSound(){
+        if(client == null) return;
+        client.getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1));
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         for (CoordButton entry : coordButtons) {
             if (entry.button.isMouseOver(mouseX, mouseY)) {
+                playClickSound();
                 int amount = (int) Math.signum(verticalAmount);
                 if (amount != 0) {
                     applyNudge(entry.field, amount);
@@ -341,7 +379,7 @@ public class ScanTaskScreen extends Screen {
         int fMinZ = Math.min(minZv, maxZv);
         int fMaxZ = Math.max(minZv, maxZv);
 
-        ScanCommand.setRange(new BlockBox(fMinX, fMinY, fMinZ, fMaxX, fMaxY, fMaxZ));
+        Scan.setRange(new BlockBox(fMinX, fMinY, fMinZ, fMaxX, fMaxY, fMaxZ));
     }
 
     private int parseInt(String s, int def) {

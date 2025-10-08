@@ -1,4 +1,4 @@
-package ru.obabok.arenascanner;
+package ru.obabok.arenascanner.client.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

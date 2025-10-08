@@ -3,8 +3,8 @@ package ru.obabok.arenascanner.client.handlers;
 import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.hotkeys.IKeybindManager;
 import fi.dy.masa.malilib.hotkeys.IKeybindProvider;
-import ru.obabok.arenascanner.Config;
-import ru.obabok.arenascanner.References;
+import ru.obabok.arenascanner.client.Config;
+import ru.obabok.arenascanner.client.util.References;
 import ru.obabok.arenascanner.client.gui.ConfigGui;
 import ru.obabok.arenascanner.client.util.RenderUtil;
 

@@ -3,12 +3,9 @@ package ru.obabok.arenascanner.client.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.block.Block;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import ru.obabok.arenascanner.References;
 import ru.obabok.arenascanner.client.serializes.BlockBoxSerializer;
 import ru.obabok.arenascanner.client.serializes.BlockPosSerializer;
 import ru.obabok.arenascanner.client.serializes.BlockSerializer;
@@ -20,8 +17,6 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -42,7 +37,7 @@ public class ScanSaveData {
     public long allChunksCounter;
     public String currentFilename;
 
-    private static Path configPath = Path.of(FileSuggestionProvider.pathToWhitelists).getParent().resolve("savedScan.json");
+    private static final Path configPath = Path.of(WhitelistsManager.stringWhitelistsPath).getParent().resolve("savedScan.json");
 
     public ScanSaveData(Set<BlockPos> _selectedBlocks, Set<ChunkPos> _unloadedChunks, List<Block> _whitelist, BlockBox _range, boolean _worldEaterMode, long _allChunksCounter, String _currentFilename){
         this.selectedBlocks = _selectedBlocks;
