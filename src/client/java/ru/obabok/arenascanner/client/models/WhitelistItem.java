@@ -1,7 +1,10 @@
-package ru.obabok.arenascanner.client.util;
+package ru.obabok.arenascanner.client.models;
 
+import com.google.gson.annotations.Expose;
 import net.minecraft.block.Block;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 public class WhitelistItem {
     public Block block;
@@ -45,5 +48,16 @@ public class WhitelistItem {
         }
         builder.append("]");
         return builder.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        WhitelistItem that = (WhitelistItem) o;
+        return Objects.equals(block, that.block) &&
+                Objects.equals(waterlogged, that.waterlogged) &&
+                Objects.equals(blastResistance, that.blastResistance) &&
+                Objects.equals(pistonBehavior, that.pistonBehavior);
     }
 }

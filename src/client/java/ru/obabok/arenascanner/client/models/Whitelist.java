@@ -1,4 +1,4 @@
-package ru.obabok.arenascanner.client.util;
+package ru.obabok.arenascanner.client.models;
 
 import java.util.ArrayList;
 

@@ -9,11 +9,12 @@ import fi.dy.masa.malilib.util.StringUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.KelpBlock;
 import ru.obabok.arenascanner.client.Config;
+import ru.obabok.arenascanner.client.models.Whitelist;
+import ru.obabok.arenascanner.client.util.NewWhitelistManager;
 import ru.obabok.arenascanner.client.util.References;
-import ru.obabok.arenascanner.client.util.Whitelist;
-import ru.obabok.arenascanner.client.util.WhitelistItem;
-import ru.obabok.arenascanner.client.util.WhitelistsManager;
+import ru.obabok.arenascanner.client.models.WhitelistItem;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,12 +41,17 @@ public class ConfigGui extends GuiConfigsBase {
         }
         ButtonGeneric testBtn = new ButtonGeneric(width - 75, getScreenHeight() - 30, 65, 20, "Test");
         this.addButton(testBtn, (btn, mousebtn)->{
-            ArrayList<WhitelistItem> items = new ArrayList<>(){
-                {
-                    add(new WhitelistItem(Blocks.OBSIDIAN, null, null, null));
-                    add(new WhitelistItem(null, null, ">9", "!Destroy"));
-                }
-            };
+
+            if(NewWhitelistManager.loadData("test.json") == null){
+                ArrayList<WhitelistItem> items = new ArrayList<>(){
+                    {
+                        add(new WhitelistItem(Blocks.ACACIA_LEAVES, null, null, null));
+                        add(new WhitelistItem(null, null, ">9", "!Destroy"));
+                    }
+                };
+
+                NewWhitelistManager.saveData(new Whitelist(items), "test.json");
+            }
             openGui(new NewWhitelistEditorScreen(this, "test.json",0));
 
 

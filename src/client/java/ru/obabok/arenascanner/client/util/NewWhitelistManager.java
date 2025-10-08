@@ -3,7 +3,8 @@ package ru.obabok.arenascanner.client.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.block.Block;
-import net.minecraft.client.network.ClientPlayerEntity;
+import ru.obabok.arenascanner.client.models.Whitelist;
+import ru.obabok.arenascanner.client.models.WhitelistItem;
 import ru.obabok.arenascanner.client.serializes.BlockSerializer;
 
 import java.io.IOException;
@@ -15,7 +16,8 @@ import java.nio.file.Path;
 
 public class NewWhitelistManager {
     private static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(Block.class, new BlockSerializer())
+            .registerTypeHierarchyAdapter(Block.class, new BlockSerializer())
+            //.registerTypeAdapter(Optional.class, new OptionalTypeSerializer())
             .setPrettyPrinting()
             .create();
     public static final String stringWhitelistsPath = "config/ArenaScanner/scan_whitelists";

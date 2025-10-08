@@ -13,6 +13,7 @@ import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
 import ru.obabok.arenascanner.client.Config;
+import ru.obabok.arenascanner.client.NewScan;
 import ru.obabok.arenascanner.client.Scan;
 import ru.obabok.arenascanner.client.mixin.WorldRendererAccessor;
 
@@ -32,9 +33,9 @@ public class RenderUtil {
 
     public static void renderAll(WorldRenderContext context) {
 
-        if(Scan.getRange() != null){
-            BlockPos pos1 = new BlockPos(Scan.getRange().getMinX(),Scan.getRange().getMinY(), Scan.getRange().getMinZ());
-            BlockPos pos2 = new BlockPos(Scan.getRange().getMaxX(), Scan.getRange().getMaxY(), Scan.getRange().getMaxZ());
+        if(NewScan.getRange() != null){
+            BlockPos pos1 = new BlockPos(NewScan.getRange().getMinX(),NewScan.getRange().getMinY(), NewScan.getRange().getMinZ());
+            BlockPos pos2 = new BlockPos(NewScan.getRange().getMaxX(), NewScan.getRange().getMaxY(), NewScan.getRange().getMaxZ());
             renderAreaOutline(pos1, pos2, 2, Color4f.fromColor(Colors.RED), Color4f.fromColor(Colors.GREEN),Color4f.fromColor(Colors.BLUE), MinecraftClient.getInstance());
         }
 

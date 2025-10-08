@@ -30,7 +30,7 @@ public class WhitelistSelectorScreen extends Screen {
     public static List<String> getWhitelistFilenames() {
         File dir = new File(WhitelistsManager.stringWhitelistsPath);
         if (!dir.exists()) dir.mkdirs();
-        File[] files = dir.listFiles((d, name) -> name.endsWith(".txt"));
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".json"));
         if (files == null) return List.of();
         return Arrays.stream(files)
                 .map(File::getName)
@@ -102,6 +102,8 @@ public class WhitelistSelectorScreen extends Screen {
     public boolean shouldPause() {
         return false;
     }
+
+
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
