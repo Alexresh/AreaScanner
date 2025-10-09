@@ -7,7 +7,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import ru.obabok.arenascanner.client.Config;
 import ru.obabok.arenascanner.client.NewScan;
-import ru.obabok.arenascanner.client.Scan;
 
 import java.util.Iterator;
 

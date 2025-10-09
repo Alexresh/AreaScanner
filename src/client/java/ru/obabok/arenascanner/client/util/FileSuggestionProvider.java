@@ -13,13 +13,13 @@ public class FileSuggestionProvider implements SuggestionProvider<FabricClientCo
 
     @Override
     public CompletableFuture<Suggestions> getSuggestions(CommandContext<FabricClientCommandSource> context, SuggestionsBuilder builder){
-        File directory = new File(WhitelistsManager.stringWhitelistsPath);
+        File directory = new File(WhitelistManager.stringWhitelistsPath);
 
         if(directory.exists() || directory.mkdirs()){
             File[] files = directory.listFiles();
             if(files != null){
                 for (File file : files) {
-                    builder.suggest(file.getName().substring(0, file.getName().length()-4));
+                    builder.suggest(file.getName());
                 }
             }
         }

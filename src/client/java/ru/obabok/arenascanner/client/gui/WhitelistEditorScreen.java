@@ -1,82 +1,149 @@
 package ru.obabok.arenascanner.client.gui;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.block.Block;
+import fi.dy.masa.malilib.gui.widgets.WidgetDropDownList;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
+import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
-import ru.obabok.arenascanner.client.util.References;
-import ru.obabok.arenascanner.client.util.WhitelistsManager;
+import ru.obabok.arenascanner.client.NewScan;
+import ru.obabok.arenascanner.client.models.ScreenPlus;
+import ru.obabok.arenascanner.client.models.Whitelist;
+import ru.obabok.arenascanner.client.util.WhitelistManager;
+import ru.obabok.arenascanner.client.models.WhitelistItem;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
-@Environment(EnvType.CLIENT)
-public class WhitelistEditorScreen extends Screen {
-    private final Screen parent;
-    private final String filename;
-    private TextFieldWidget blockInput;
+public class WhitelistEditorScreen extends ScreenPlus {
+
+    Screen parent;
+    private final ArrayList<WhitelistItem> current_whitelist;
     private final int currentPage;
     private static final int BLOCKS_PER_PAGE = 12;
+    private TextFieldWidget blockInput;
+    private final String filename;
+    private final WhitelistItem createdWhitelistItem = new WhitelistItem(null, null, null, null);
+    private ButtonWidget addToWhitelistBtn;
+    private static final List<String> waterloggedValues = List.of("true", "false");
+    private static final List<String> pistonBehaviorValues = Stream.of(PistonBehavior.values()).map(Enum::toString).toList();
 
-    public WhitelistEditorScreen(Screen parent, String filename, int page) {
-        super(Text.translatable("arenascanner.gui.title.whitelists.editor", filename.replace(".txt", "")));
+
+    private WidgetDropDownList<String> waterloggedWidget;
+    private WidgetDropDownList<String> pistonBehaviorWidget;
+    private WidgetDropDownList<String> comparisonOperatorsWidget;
+    private WidgetDropDownList<String> equalsOperatorsWidget;
+    private TextFieldWidget blastResistanceValue;
+
+    protected WhitelistEditorScreen(Screen parent, String filename, int page) {
+        super(Text.literal("WhitelistEditorScreen"));
         this.parent = parent;
-        this.filename = filename.replace(".txt", "");
         this.currentPage = Math.max(0, page);
+        this.filename = filename;
+        Whitelist whitelist = WhitelistManager.loadData(filename);
+        if(whitelist == null){
+            whitelist = new Whitelist(new ArrayList<>());
+            WhitelistManager.saveData(whitelist, filename);
+        }
+        current_whitelist = whitelist.whitelist;
     }
 
     @Override
     protected void init() {
-        List<Block> currentBlocks = WhitelistsManager.loadWhitelist(filename);
-        if(currentBlocks == null){
-            client.setScreen(parent);
-            References.LOGGER.error("currentBlocks is null");
-        }
-        int totalPages = (currentBlocks.size() + BLOCKS_PER_PAGE - 1) / BLOCKS_PER_PAGE;
-
+        super.init();
+        int totalPages = (current_whitelist.size() + BLOCKS_PER_PAGE - 1) / BLOCKS_PER_PAGE;
         int from = currentPage * BLOCKS_PER_PAGE;
-        int to = Math.min(from + BLOCKS_PER_PAGE, currentBlocks.size());
-        List<Block> pageBlocks = currentBlocks.subList(from, to);
+        int to = Math.min(from + BLOCKS_PER_PAGE, current_whitelist.size());
+        List<WhitelistItem> pageBlocks = current_whitelist.subList(from, to);
 
-        // Поле ввода блока
-        blockInput = new TextFieldWidget(textRenderer, width / 2 - 100, 30, 150, 20, Text.empty());
+        int rowHeight = 60;
+        int y = 30;
+
+        //block input
+        addDrawableChild(new TextWidget(30, y, 120, 20, Text.literal("Block"), textRenderer).alignLeft());
+        blockInput = new TextFieldWidget(textRenderer, 130, y, 100, 20, Text.empty());
         addDrawableChild(blockInput);
 
-        addDrawableChild(ButtonWidget.builder(Text.literal("Add Block"), button -> {
-            String idStr = blockInput.getText().trim();
-            if (idStr.isEmpty()) return;
-            try {
-                Identifier id = Identifier.tryParse(idStr);
-                if (id != null && Registries.BLOCK.containsId(id)) {
-                    Block block = Registries.BLOCK.get(id);
-                    WhitelistsManager.addToWhitelist(client.player, filename, block);
-                    client.setScreen(new WhitelistEditorScreen(parent, filename, 0));
-                }
-            } catch (Exception e) {
-                // игнорируем
-            }
-        }).dimensions(width / 2 + 55, 30, 60, 20).build());
+        y+=rowHeight;
+        //waterlogged
+        addDrawableChild(new TextWidget(30, y, 70, 20, Text.literal("Waterlogged"), textRenderer).alignLeft());
+        waterloggedWidget = new WidgetDropDownList<>(130, y, 50, 20, 60, 2, waterloggedValues);
+        waterloggedWidget.setZLevel(100);
+        addWidget(waterloggedWidget);
 
-        // Отображение блоков (с кнопками удаления)
-        int y = 70;
-        for (Block block : pageBlocks) {
-            Identifier id = Registries.BLOCK.getId(block);
-            addDrawableChild(ButtonWidget.builder(Text.literal(id.toString()), btn -> {})
-                    .dimensions(width / 2 - 120, y, 200, 20)
-                    .build());
+        y+=rowHeight;
+        //pistonBehavior
+        addDrawableChild(new TextWidget(30, y, 120, 20, Text.literal("Piston behavior"), textRenderer).alignLeft());
+        equalsOperatorsWidget = new WidgetDropDownList<>(130, y, 50, 20, 60, 2, NewScan.equalsOperatorsValues);
+        equalsOperatorsWidget.setZLevel(100);
+        addWidget(equalsOperatorsWidget);
+        pistonBehaviorWidget = new WidgetDropDownList<>(190, y, 70, 20, 60, 2, pistonBehaviorValues);
+        pistonBehaviorWidget.setZLevel(100);
+        addWidget(pistonBehaviorWidget);
 
+        y+=rowHeight;
+        //blastResistance
+        addDrawableChild(new TextWidget(30, y, 120, 20, Text.literal("Blast resistance"), textRenderer).alignLeft());
+        comparisonOperatorsWidget = new WidgetDropDownList<>(130, y, 50, 20, 60, 2, NewScan.comparisonOperatorsValues);
+        comparisonOperatorsWidget.setZLevel(100);
+        addWidget(comparisonOperatorsWidget);
+        blastResistanceValue = new TextFieldWidget(textRenderer, 190, y, 30, 20, Text.empty());
+        blastResistanceValue.setChangedListener(s -> {
+
+        });
+        addDrawableChild(blastResistanceValue);
+
+        y = 30;
+        int i = 0;
+        for (WhitelistItem item : pageBlocks) {
+            i++;
             addDrawableChild(ButtonWidget.builder(Text.literal("❌"), btn -> {
-                WhitelistsManager.removeFromWhitelist(client.player, filename, block);
+                WhitelistManager.removeFromWhitelist(filename, item);
                 client.setScreen(new WhitelistEditorScreen(parent, filename, currentPage));
-            }).dimensions(width / 2 + 85, y, 20, 20).build());
+            }).dimensions(width / 2 - 150, y, 20, 20).build());
 
+            TextWidget widget = new TextWidget(width / 2 - 120, y, 400, 20,Text.literal("Condition " + i + "     OR"),textRenderer).alignLeft();
+
+            String builder = (item.block == null ? "-\n" : item.block + " AND\n") +
+                    (item.waterlogged == null ? "-\n" : "Waterlogged: " + item.waterlogged + " AND\n") +
+                    (item.pistonBehavior == null ? "-\n" : "Piston behavior: " + item.pistonBehavior + " AND\n") +
+                    (item.blastResistance == null ? "-" : "Blast resistance: " + item.blastResistance);
+            widget.setTooltip(Tooltip.of(Text.literal(builder)));
+            addDrawableChild(widget);
             y += 23;
         }
+
+        //presets
+        List<Whitelist> list = new ArrayList<>();
+        Whitelist worldEater = new Whitelist(new ArrayList<>(){{
+            add(new WhitelistItem(null, null, ">9", "≠DESTROY"));
+        }}, "World eater");
+        Whitelist fluidsAndWaterlogged = new Whitelist(new ArrayList<>(){{
+            add(new WhitelistItem(Blocks.LAVA, null, null, null));
+            add(new WhitelistItem(Blocks.WATER, null, null, null));
+            add(new WhitelistItem(null, "true", null, null));
+        }}, "Fluids and Waterlogged");
+
+        list.add(worldEater);
+        list.add(fluidsAndWaterlogged);
+        WidgetDropDownList<Whitelist> presets = new WidgetDropDownList<>(width - 180, 30, 150, 20, 100, 5, list);
+        addWidget(presets);
+        addDrawableChild(ButtonWidget.builder(Text.literal("Add preset"), btn -> {
+            if(presets.getSelectedEntry() != null){
+                current_whitelist.addAll(presets.getSelectedEntry().whitelist);
+                WhitelistManager.saveData(new Whitelist(current_whitelist), filename);
+                client.setScreen(new WhitelistEditorScreen(parent, filename, 0));
+            }
+        }).dimensions(width - 110, 60, 80, 20).build());
+
 
         int buttonY = height - 60;
         if (currentPage > 0) {
@@ -90,25 +157,56 @@ public class WhitelistEditorScreen extends Screen {
                 btn -> {}
         ).dimensions(width / 2 - 40, buttonY, 80, 20).build());
 
-        if (to < currentBlocks.size()) {
+        if (to < current_whitelist.size()) {
             addDrawableChild(ButtonWidget.builder(Text.literal("Next >"), btn ->
                     client.setScreen(new WhitelistEditorScreen(parent, filename, currentPage + 1))
             ).dimensions(width / 2 + 40, buttonY, 80, 20).build());
         }
 
         addDrawableChild(ButtonWidget.builder(Text.literal("Back"), btn -> client.setScreen(parent))
-                .dimensions(width / 2 - 40, height - 30, 80, 20).build());
+                .dimensions(30, height - 30, 80, 20).build());
+
+        addToWhitelistBtn = ButtonWidget.builder(Text.literal("Add to whitelist"), btn -> {
+                    if(validateCreatedWhitelistItem()){
+                        current_whitelist.add(createdWhitelistItem);
+                        WhitelistManager.saveData(new Whitelist(current_whitelist), filename);
+                        client.setScreen(new WhitelistEditorScreen(parent, filename, 0));
+                    }
+                }).dimensions(120, height - 30, 120, 20).build();
+        addDrawableChild(addToWhitelistBtn);
+
     }
 
-    @Override
-    public boolean shouldPause() {
-        return false;
+    private boolean validateCreatedWhitelistItem(){
+        return createdWhitelistItem.block != null || createdWhitelistItem.waterlogged != null || createdWhitelistItem.pistonBehavior != null || createdWhitelistItem.blastResistance != null;
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        renderBackground(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 10, 0xFFFFFF);
+        //block
+        try {
+            if(!blockInput.getText().isEmpty() && Registries.BLOCK.containsId(Identifier.of(blockInput.getText()))){
+                createdWhitelistItem.block = Registries.BLOCK.get(Identifier.of(blockInput.getText()));
+            }else createdWhitelistItem.block = null;
+        }catch (Exception ignored){}
+        //waterlogged
+        if(waterloggedWidget.getSelectedEntry() != null){
+            createdWhitelistItem.waterlogged = waterloggedWidget.getSelectedEntry();
+        }else createdWhitelistItem.waterlogged = null;
+
+        //pistonBehavior
+        if(equalsOperatorsWidget.getSelectedEntry() != null && pistonBehaviorWidget.getSelectedEntry() != null){
+            createdWhitelistItem.pistonBehavior = equalsOperatorsWidget.getSelectedEntry() + pistonBehaviorWidget.getSelectedEntry();
+        }else createdWhitelistItem.pistonBehavior = null;
+
+        //blast resistance
+        if(comparisonOperatorsWidget.getSelectedEntry() != null && !blastResistanceValue.getText().isEmpty()){
+            createdWhitelistItem.blastResistance = comparisonOperatorsWidget.getSelectedEntry() + blastResistanceValue.getText();
+        }else createdWhitelistItem.blastResistance = null;
+
+
+        addToWhitelistBtn.active = validateCreatedWhitelistItem();
+        context.drawText(textRenderer, Text.literal(createdWhitelistItem.toString()), 30,height - 50, Colors.WHITE, true);
         super.render(context, mouseX, mouseY, delta);
     }
 }

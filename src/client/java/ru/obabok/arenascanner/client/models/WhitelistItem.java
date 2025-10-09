@@ -34,15 +34,15 @@ public class WhitelistItem {
         if(block != null){
             builder.append("block:").append(block);
         }
-        builder.append(" or ");
+        builder.append(" and ");
         if(waterlogged != null){
             builder.append("waterlogged:").append(waterlogged);
         }
-        builder.append(" or ");
+        builder.append(" and ");
         if(blastResistance != null){
             builder.append("blastResistance:").append(blastResistance);
         }
-        builder.append(" or ");
+        builder.append(" and ");
         if(pistonBehavior != null){
             builder.append("pistonBehavior:").append(pistonBehavior);
         }

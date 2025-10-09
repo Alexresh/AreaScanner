@@ -8,15 +8,10 @@ import fi.dy.masa.malilib.gui.button.IButtonActionListener;
 import fi.dy.masa.malilib.util.StringUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.KelpBlock;
+import net.minecraft.sound.SoundEvents;
 import ru.obabok.arenascanner.client.Config;
-import ru.obabok.arenascanner.client.models.Whitelist;
-import ru.obabok.arenascanner.client.util.NewWhitelistManager;
 import ru.obabok.arenascanner.client.util.References;
-import ru.obabok.arenascanner.client.models.WhitelistItem;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -41,20 +36,20 @@ public class ConfigGui extends GuiConfigsBase {
         }
         ButtonGeneric testBtn = new ButtonGeneric(width - 75, getScreenHeight() - 30, 65, 20, "Test");
         this.addButton(testBtn, (btn, mousebtn)->{
-
-            if(NewWhitelistManager.loadData("test.json") == null){
-                ArrayList<WhitelistItem> items = new ArrayList<>(){
-                    {
-                        add(new WhitelistItem(Blocks.ACACIA_LEAVES, null, null, null));
-                        add(new WhitelistItem(null, null, ">9", "!Destroy"));
-                    }
-                };
-
-                NewWhitelistManager.saveData(new Whitelist(items), "test.json");
-            }
-            openGui(new NewWhitelistEditorScreen(this, "test.json",0));
-
-
+            client.player.playSound(SoundEvents.AMBIENT_CAVE.value());
+            close();
+            return;
+//            if(NewWhitelistManager.loadData("test.json") == null){
+//                ArrayList<WhitelistItem> items = new ArrayList<>(){
+//                    {
+//                        add(new WhitelistItem(Blocks.ACACIA_LEAVES, null, null, null));
+//                        add(new WhitelistItem(null, null, ">9", "!Destroy"));
+//                    }
+//                };
+//
+//                NewWhitelistManager.saveData(new Whitelist(items), "test.json");
+//            }
+//            openGui(new NewWhitelistEditorScreen(this, "test.json",0));
         });
 
 

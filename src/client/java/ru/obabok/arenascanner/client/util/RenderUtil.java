@@ -14,7 +14,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
 import ru.obabok.arenascanner.client.Config;
 import ru.obabok.arenascanner.client.NewScan;
-import ru.obabok.arenascanner.client.Scan;
 import ru.obabok.arenascanner.client.mixin.WorldRendererAccessor;
 
 import java.util.EnumSet;

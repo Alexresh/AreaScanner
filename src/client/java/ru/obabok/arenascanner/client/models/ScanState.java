@@ -1,4 +1,4 @@
-package ru.obabok.arenascanner.client.util;
+package ru.obabok.arenascanner.client.models;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -10,6 +10,8 @@ import ru.obabok.arenascanner.client.serializes.BlockBoxSerializer;
 import ru.obabok.arenascanner.client.serializes.BlockPosSerializer;
 import ru.obabok.arenascanner.client.serializes.BlockSerializer;
 import ru.obabok.arenascanner.client.serializes.ChunkPosSerializer;
+import ru.obabok.arenascanner.client.util.WhitelistManager;
+import ru.obabok.arenascanner.client.util.References;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -17,39 +19,36 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
 
-public class ScanSaveData {
+public class ScanState {
     private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(BlockPos.class, new BlockPosSerializer())
             .registerTypeAdapter(ChunkPos.class, new ChunkPosSerializer())
-            .registerTypeAdapter(Block.class, new BlockSerializer())
+            .registerTypeHierarchyAdapter(Block.class, new BlockSerializer())
             .registerTypeAdapter(BlockBox.class, new BlockBoxSerializer())
             .setPrettyPrinting()
             .create();
 
     public Set<BlockPos> selectedBlocks;
     public Set<ChunkPos> unloadedChunks;
-    public List<Block> whitelist;
+    public Whitelist whitelist;
     public BlockBox range;
-    public boolean worldEaterMode = false;
     public long allChunksCounter;
     public String currentFilename;
 
-    private static final Path configPath = Path.of(WhitelistsManager.stringWhitelistsPath).getParent().resolve("savedScan.json");
+    private static final Path configPath = Path.of(WhitelistManager.stringWhitelistsPath).getParent().resolve("savedScan.json");
 
-    public ScanSaveData(Set<BlockPos> _selectedBlocks, Set<ChunkPos> _unloadedChunks, List<Block> _whitelist, BlockBox _range, boolean _worldEaterMode, long _allChunksCounter, String _currentFilename){
+    public ScanState(Set<BlockPos> _selectedBlocks, Set<ChunkPos> _unloadedChunks, Whitelist _whitelist, BlockBox _range, long _allChunksCounter, String _currentFilename){
         this.selectedBlocks = _selectedBlocks;
         this.unloadedChunks = _unloadedChunks;
         this.whitelist = _whitelist;
         this.range = _range;
-        this.worldEaterMode = _worldEaterMode;
         this.allChunksCounter = _allChunksCounter;
         this.currentFilename = _currentFilename;
     }
 
-    public static void saveData(ScanSaveData data) {
+    public static void saveData(ScanState data) {
         try {
             Files.createDirectories(configPath.getParent());
             try (Writer writer = Files.newBufferedWriter(configPath, StandardCharsets.UTF_8)) {
@@ -60,12 +59,12 @@ public class ScanSaveData {
         }
     }
 
-    public static ScanSaveData loadData() {
+    public static ScanState loadData() {
         if (!Files.exists(configPath)) {
             return null;
         }
         try (Reader reader = Files.newBufferedReader(configPath, StandardCharsets.UTF_8)) {
-            return GSON.fromJson(reader, ScanSaveData.class);
+            return GSON.fromJson(reader, ScanState.class);
         } catch (IOException e) {
             References.LOGGER.error(e.getMessage());
             return null;
