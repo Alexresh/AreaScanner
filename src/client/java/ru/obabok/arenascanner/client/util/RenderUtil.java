@@ -1,6 +1,7 @@
 package ru.obabok.arenascanner.client.util;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import fi.dy.masa.malilib.render.RenderUtils;
 import fi.dy.masa.malilib.util.data.Color4f;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -13,7 +14,7 @@ import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
 import ru.obabok.arenascanner.client.Config;
-import ru.obabok.arenascanner.client.NewScan;
+import ru.obabok.arenascanner.client.Scan;
 import ru.obabok.arenascanner.client.mixin.WorldRendererAccessor;
 
 import java.util.EnumSet;
@@ -32,9 +33,9 @@ public class RenderUtil {
 
     public static void renderAll(WorldRenderContext context) {
 
-        if(NewScan.getRange() != null){
-            BlockPos pos1 = new BlockPos(NewScan.getRange().getMinX(),NewScan.getRange().getMinY(), NewScan.getRange().getMinZ());
-            BlockPos pos2 = new BlockPos(NewScan.getRange().getMaxX(), NewScan.getRange().getMaxY(), NewScan.getRange().getMaxZ());
+        if(Scan.getRange() != null){
+            BlockPos pos1 = new BlockPos(Scan.getRange().getMinX(), Scan.getRange().getMinY(), Scan.getRange().getMinZ());
+            BlockPos pos2 = new BlockPos(Scan.getRange().getMaxX(), Scan.getRange().getMaxY(), Scan.getRange().getMaxZ());
             renderAreaOutline(pos1, pos2, 2, Color4f.fromColor(Colors.RED), Color4f.fromColor(Colors.GREEN),Color4f.fromColor(Colors.BLUE), MinecraftClient.getInstance());
         }
 
@@ -56,7 +57,7 @@ public class RenderUtil {
                     float scale = (float) Math.min(1, context.camera().getPos().squaredDistanceTo(block.toCenterPos()) / 500);
                     scale = Math.max(scale, 0.05f);
                     if(context.camera().getPos().distanceTo(block.toCenterPos()) < Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() || Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() == -1){
-                        renderBlock1(
+                        renderBlock2(
                                 block,
                                 context.matrixStack(),
                                 ((WorldRendererAccessor)context.worldRenderer()).getBufferBuilders().getOutlineVertexConsumers(),
@@ -98,8 +99,6 @@ public class RenderUtil {
         matrices.pop();
     }
     //original
-
-
     private static void renderBlock1(BlockPos pos, MatrixStack matrices, OutlineVertexConsumerProvider vertexConsumers, Color4f color, float baseScale) {
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         Vec3d cameraPos = camera.getPos();
@@ -130,6 +129,60 @@ public class RenderUtil {
 
         matrices.pop();
     }
+
+    private static void renderBlock2(BlockPos pos, MatrixStack matrices, OutlineVertexConsumerProvider vertexConsumers, Color4f color, float baseScale) {
+        RenderSystem.enableBlend();
+        RenderSystem.disableCull();
+
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+        //RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+        BuiltBuffer meshData;
+        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+        Vec3d cameraPos = camera.getPos();
+        double dx = pos.getX() + 0.5 - cameraPos.x;
+        double dz = pos.getZ() + 0.5 - cameraPos.z;
+        double distXZ = Math.sqrt(dx * dx + dz * dz);
+        double t = Math.max(0.0, Math.min(1.0, (distXZ - Config.Generic.SELECTED_BLOCKS_MOVE_MIN_DISTANCE.getIntegerValue()) / (Config.Generic.SELECTED_BLOCKS_MOVE_MAX_DISTANCE.getIntegerValue() - Config.Generic.SELECTED_BLOCKS_MOVE_MIN_DISTANCE.getIntegerValue())));
+        double renderY = MathHelper.lerp(t, pos.getY() + 0.5, cameraPos.y);
+        float farHeightScale = 8.0f;
+        float scaleY = distXZ - Config.Generic.SELECTED_BLOCKS_MOVE_MIN_DISTANCE.getIntegerValue() < 0 ? 0 : farHeightScale;
+
+
+
+        renderAreaSidesBatched(pos.withY((int) renderY), pos.withY((int)renderY).offset(Direction.Axis.Y, (int)scaleY), color, 0.002, buffer, MinecraftClient.getInstance());
+
+        try
+        {
+            meshData = buffer.end();
+            BufferRenderer.drawWithGlobalProgram(meshData);
+            meshData.close();
+        }
+        catch (Exception ignored) { }
+
+        RenderSystem.enableCull();
+        RenderSystem.disableBlend();
+    }
+
+    public static void renderAreaSidesBatched(BlockPos pos1, BlockPos pos2, Color4f color,
+                                              double expand, BufferBuilder buffer, MinecraftClient mc)
+    {
+        Vec3d cameraPos = mc.gameRenderer.getCamera().getPos();
+        final double dx = cameraPos.x;
+        final double dy = cameraPos.y;
+        final double dz = cameraPos.z;
+        double minX = Math.min(pos1.getX(), pos2.getX()) - dx - expand;
+        double minY = Math.min(pos1.getY(), pos2.getY()) - dy - expand;
+        double minZ = Math.min(pos1.getZ(), pos2.getZ()) - dz - expand;
+        double maxX = Math.max(pos1.getX(), pos2.getX()) + 1 - dx + expand;
+        double maxY = Math.max(pos1.getY(), pos2.getY()) + 1 - dy + expand;
+        double maxZ = Math.max(pos1.getZ(), pos2.getZ()) + 1 - dz + expand;
+
+        RenderUtils.drawBoxAllSidesBatchedQuads((float) minX, (float) minY, (float) minZ, (float) maxX, (float) maxY, (float) maxZ, fi.dy.masa.malilib.util.Color4f.fromColor(color.getIntValue()) , buffer);
+    }
+
+
 
     private static VertexConsumer setColorFromHex(OutlineVertexConsumerProvider vertexConsumers, Color4f hexColor) {
         vertexConsumers.setColor(hexColor.ri, hexColor.gi, hexColor.bi, hexColor.ai);

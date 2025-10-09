@@ -28,9 +28,7 @@ public class ArenascannerClient implements ClientModInitializer {
         InitializationHandler.getInstance().registerInitializationHandler(new InitHandler());
         ClientCommandRegistrationCallback.EVENT.register(ScanCommand::register);
 
-        ClientPlayerBlockBreakEvents.AFTER.register((clientWorld, clientPlayerEntity, blockPos, blockState) -> {
-            ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos));
-        });
+        ClientPlayerBlockBreakEvents.AFTER.register((clientWorld, clientPlayerEntity, blockPos, blockState) -> ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos)));
 
         AttackBlockCallback.EVENT.register((playerEntity, world, hand, blockPos, direction) -> {
             if(!world.isClient) return ActionResult.PASS;
@@ -45,7 +43,7 @@ public class ArenascannerClient implements ClientModInitializer {
         });
 
         ClientChunkEvents.CHUNK_LOAD.register((clientWorld, worldChunk) -> {
-            if(NewScan.getRange() != null && NewScan.unloadedChunks.contains(worldChunk.getPos()))
+            if(Scan.getRange() != null && Scan.unloadedChunks.contains(worldChunk.getPos()))
                 ChunkScheduler.addChunkToProcess(worldChunk.getPos());
         });
 

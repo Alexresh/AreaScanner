@@ -13,15 +13,16 @@ import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
-import ru.obabok.arenascanner.client.NewScan;
+import ru.obabok.arenascanner.client.Scan;
 import ru.obabok.arenascanner.client.models.ScreenPlus;
 import ru.obabok.arenascanner.client.models.Whitelist;
 import ru.obabok.arenascanner.client.util.WhitelistManager;
 import ru.obabok.arenascanner.client.models.WhitelistItem;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 public class WhitelistEditorScreen extends ScreenPlus {
 
@@ -34,7 +35,9 @@ public class WhitelistEditorScreen extends ScreenPlus {
     private final WhitelistItem createdWhitelistItem = new WhitelistItem(null, null, null, null);
     private ButtonWidget addToWhitelistBtn;
     private static final List<String> waterloggedValues = List.of("true", "false");
-    private static final List<String> pistonBehaviorValues = Stream.of(PistonBehavior.values()).map(Enum::toString).toList();
+    private static List<String> pistonBehaviorValues = Arrays.stream(PistonBehavior.values())
+            .map(Enum::toString)
+            .collect(Collectors.toCollection(ArrayList::new));
 
 
     private WidgetDropDownList<String> waterloggedWidget;
@@ -63,6 +66,9 @@ public class WhitelistEditorScreen extends ScreenPlus {
         int from = currentPage * BLOCKS_PER_PAGE;
         int to = Math.min(from + BLOCKS_PER_PAGE, current_whitelist.size());
         List<WhitelistItem> pageBlocks = current_whitelist.subList(from, to);
+        if(!pistonBehaviorValues.contains("IMMOVABLE"))
+            pistonBehaviorValues.add("IMMOVABLE");
+
 
         int rowHeight = 60;
         int y = 30;
@@ -82,7 +88,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         y+=rowHeight;
         //pistonBehavior
         addDrawableChild(new TextWidget(30, y, 120, 20, Text.literal("Piston behavior"), textRenderer).alignLeft());
-        equalsOperatorsWidget = new WidgetDropDownList<>(130, y, 50, 20, 60, 2, NewScan.equalsOperatorsValues);
+        equalsOperatorsWidget = new WidgetDropDownList<>(130, y, 50, 20, 60, 2, Scan.equalsOperatorsValues);
         equalsOperatorsWidget.setZLevel(100);
         addWidget(equalsOperatorsWidget);
         pistonBehaviorWidget = new WidgetDropDownList<>(190, y, 70, 20, 60, 2, pistonBehaviorValues);
@@ -92,7 +98,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         y+=rowHeight;
         //blastResistance
         addDrawableChild(new TextWidget(30, y, 120, 20, Text.literal("Blast resistance"), textRenderer).alignLeft());
-        comparisonOperatorsWidget = new WidgetDropDownList<>(130, y, 50, 20, 60, 2, NewScan.comparisonOperatorsValues);
+        comparisonOperatorsWidget = new WidgetDropDownList<>(130, y, 50, 20, 60, 2, Scan.comparisonOperatorsValues);
         comparisonOperatorsWidget.setZLevel(100);
         addWidget(comparisonOperatorsWidget);
         blastResistanceValue = new TextFieldWidget(textRenderer, 190, y, 30, 20, Text.empty());
@@ -136,7 +142,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         list.add(fluidsAndWaterlogged);
         WidgetDropDownList<Whitelist> presets = new WidgetDropDownList<>(width - 180, 30, 150, 20, 100, 5, list);
         addWidget(presets);
-        addDrawableChild(ButtonWidget.builder(Text.literal("Add preset"), btn -> {
+        addDrawableChild(ButtonWidget.builder(Text.literal("Use"), btn -> {
             if(presets.getSelectedEntry() != null){
                 current_whitelist.addAll(presets.getSelectedEntry().whitelist);
                 WhitelistManager.saveData(new Whitelist(current_whitelist), filename);

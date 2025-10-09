@@ -6,7 +6,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import ru.obabok.arenascanner.client.Config;
-import ru.obabok.arenascanner.client.NewScan;
+import ru.obabok.arenascanner.client.Scan;
 
 import java.util.Iterator;
 
@@ -29,9 +29,9 @@ public class HudRender {
             drawContext.getMatrices().push();
             drawContext.getMatrices().scale(Config.Hud.HUD_SCALE.getFloatValue(),Config.Hud.HUD_SCALE.getFloatValue(),0);
             try {
-                if(!NewScan.selectedBlocks.isEmpty()){
-                    BlockPos pos = NewScan.selectedBlocks.iterator().next();
-                    String selectedBlocksText = "Selected blocks: %d -> [%d, %d, %d]".formatted(NewScan.selectedBlocks.size(), pos.getX(), pos.getY(), pos.getZ());
+                if(!Scan.selectedBlocks.isEmpty()){
+                    BlockPos pos = Scan.selectedBlocks.iterator().next();
+                    String selectedBlocksText = "Selected blocks: %d -> [%d, %d, %d]".formatted(Scan.selectedBlocks.size(), pos.getX(), pos.getY(), pos.getZ());
                     int textWidthSelected = MinecraftClient.getInstance().textRenderer.getWidth(selectedBlocksText);
                     int posX = hudStartX;
                     if (Config.Hud.HUD_POS_X.getIntegerValue() < 0) {
@@ -44,11 +44,11 @@ public class HudRender {
                 LOGGER.error(exception.getMessage());
             }
 
-            if(!NewScan.unloadedChunks.isEmpty()){
+            if(!Scan.unloadedChunks.isEmpty()){
                 try {
-                    Iterator<ChunkPos> iterator = NewScan.unloadedChunks.iterator();
+                    Iterator<ChunkPos> iterator = Scan.unloadedChunks.iterator();
                     if(iterator.hasNext()){
-                        String unloadedChunksText = "Unchecked chunks: %d -> %s".formatted(NewScan.unloadedChunks.size(), iterator.next().toString());
+                        String unloadedChunksText = "Unchecked chunks: %d -> %s".formatted(Scan.unloadedChunks.size(), iterator.next().toString());
                         int textWidthUnloaded = MinecraftClient.getInstance().textRenderer.getWidth(unloadedChunksText);
                         int posX = hudStartX;
                         if (Config.Hud.HUD_POS_X.getIntegerValue() < 0) {

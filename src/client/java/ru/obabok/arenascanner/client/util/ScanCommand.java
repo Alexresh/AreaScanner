@@ -6,7 +6,7 @@ import dev.xpple.clientarguments.arguments.CBlockPosArgument;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.util.math.BlockBox;
-import ru.obabok.arenascanner.client.NewScan;
+import ru.obabok.arenascanner.client.Scan;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -21,21 +21,17 @@ public class ScanCommand {
                         .then(argument("to", CBlockPosArgument.blockPos())
                                 .then(literal("whitelist")
                                         .then(argument("whitelist", StringArgumentType.string()).suggests(new FileSuggestionProvider())
-                                                .executes(context -> {
-                                                    return NewScan.executeAsync(context.getSource().getWorld(), BlockBox.create(
-                                                                    CBlockPosArgument.getBlockPos(context, "from"),
-                                                                    CBlockPosArgument.getBlockPos(context, "to")),
-                                                            StringArgumentType.getString(context, "whitelist"));
-                                                })))
+                                                .executes(context -> Scan.executeAsync(context.getSource().getWorld(), BlockBox.create(
+                                                                CBlockPosArgument.getBlockPos(context, "from"),
+                                                                CBlockPosArgument.getBlockPos(context, "to")),
+                                                        StringArgumentType.getString(context, "whitelist")))))
                                 .then(literal("worldEaterMode")
-                                        .executes(context -> {
-                                            return NewScan.executeAsync(context.getSource().getWorld(), BlockBox.create(
-                                                            CBlockPosArgument.getBlockPos(context, "from"),
-                                                            CBlockPosArgument.getBlockPos(context, "to")),
-                                                    "");
-                                        }))))
+                                        .executes(context -> Scan.executeAsync(context.getSource().getWorld(), BlockBox.create(
+                                                        CBlockPosArgument.getBlockPos(context, "from"),
+                                                        CBlockPosArgument.getBlockPos(context, "to")),
+                                                "")))))
                 .then(literal("stop").executes(context -> {
-                    NewScan.stopScan();
+                    Scan.stopScan();
                     return 1;
                 }))
                 .then(literal("whitelists")

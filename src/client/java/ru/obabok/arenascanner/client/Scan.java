@@ -1,8 +1,7 @@
 package ru.obabok.arenascanner.client;
 
+import fi.dy.masa.malilib.data.MaLiLibTag;
 import net.minecraft.block.*;
-import net.minecraft.block.entity.PistonBlockEntity;
-import net.minecraft.block.entity.Spawner;
 import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
@@ -20,7 +19,7 @@ import ru.obabok.arenascanner.client.util.*;
 
 import java.util.*;
 
-public class NewScan {
+public class Scan {
     public static HashSet<BlockPos> selectedBlocks = new HashSet<>();
     public static HashSet<ChunkPos> unloadedChunks = new HashSet<>();
     private static Whitelist whitelist;
@@ -234,15 +233,21 @@ public class NewScan {
                     insideMeet = false;// или throw, или пропустить
                 }
                 try {
-                    PistonBehavior behavior = PistonBehavior.valueOf(behaviorPart);
-                    PistonBehavior actual = blockState.getPistonBehavior();
-                    boolean matches = switch (operator) {
-                        case "=" -> actual == behavior;
-                        case "≠" -> actual != behavior;
-                        default -> false;
-                    };
-                    if (!matches) {
-                        insideMeet = false;
+                    if(behaviorPart.equals("IMMOVABLE")){
+                        if(!blockState.getBlock().getDefaultState().isIn(MaLiLibTag.Blocks.IMMOVABLE_BLOCKS)){
+                            insideMeet = false;
+                        }
+                    }else{
+                        PistonBehavior behavior = PistonBehavior.valueOf(behaviorPart);
+                        PistonBehavior actual = blockState.getPistonBehavior();
+                        boolean matches = switch (operator) {
+                            case "=" -> actual == behavior;
+                            case "≠" -> actual != behavior;
+                            default -> false;
+                        };
+                        if (!matches) {
+                            insideMeet = false;
+                        }
                     }
                 }catch (Exception e){
                     References.LOGGER.error("[add block]PistonBehavior is corrupted");
