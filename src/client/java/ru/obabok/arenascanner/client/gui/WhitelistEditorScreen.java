@@ -1,8 +1,6 @@
 package ru.obabok.arenascanner.client.gui;
 
-import fi.dy.masa.malilib.gui.widgets.WidgetDropDownList;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.Tooltip;
@@ -20,9 +18,7 @@ import ru.obabok.arenascanner.client.util.WhitelistManager;
 import ru.obabok.arenascanner.client.models.WhitelistItem;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class WhitelistEditorScreen extends ScreenPlus {
 
@@ -35,15 +31,13 @@ public class WhitelistEditorScreen extends ScreenPlus {
     private final WhitelistItem createdWhitelistItem = new WhitelistItem(null, null, null, null);
     private ButtonWidget addToWhitelistBtn;
     private static final List<String> waterloggedValues = List.of("true", "false");
-    private static List<String> pistonBehaviorValues = Arrays.stream(PistonBehavior.values())
-            .map(Enum::toString)
-            .collect(Collectors.toCollection(ArrayList::new));
+    public static List<String> pistonBehaviorValues = List.of("IMMOVABLE", "DESTROY", "NORMAL");
 
 
-    private WidgetDropDownList<String> waterloggedWidget;
-    private WidgetDropDownList<String> pistonBehaviorWidget;
-    private WidgetDropDownList<String> comparisonOperatorsWidget;
-    private WidgetDropDownList<String> equalsOperatorsWidget;
+    private ToggelableWidgedDropDownList<String> waterloggedWidget;
+    private ToggelableWidgedDropDownList<String> pistonBehaviorWidget;
+    private ToggelableWidgedDropDownList<String> comparisonOperatorsWidget;
+    private ToggelableWidgedDropDownList<String> equalsOperatorsWidget;
     private TextFieldWidget blastResistanceValue;
 
     protected WhitelistEditorScreen(Screen parent, String filename, int page) {
@@ -66,8 +60,8 @@ public class WhitelistEditorScreen extends ScreenPlus {
         int from = currentPage * BLOCKS_PER_PAGE;
         int to = Math.min(from + BLOCKS_PER_PAGE, current_whitelist.size());
         List<WhitelistItem> pageBlocks = current_whitelist.subList(from, to);
-        if(!pistonBehaviorValues.contains("IMMOVABLE"))
-            pistonBehaviorValues.add("IMMOVABLE");
+//        if(!pistonBehaviorValues.contains("IMMOVABLE"))
+//            pistonBehaviorValues.add("IMMOVABLE");
 
 
         int rowHeight = 60;
@@ -81,24 +75,24 @@ public class WhitelistEditorScreen extends ScreenPlus {
         y+=rowHeight;
         //waterlogged
         addDrawableChild(new TextWidget(30, y, 70, 20, Text.literal("Waterlogged"), textRenderer).alignLeft());
-        waterloggedWidget = new WidgetDropDownList<>(130, y, 50, 20, 60, 2, waterloggedValues);
+        waterloggedWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 60, 2, waterloggedValues);
         waterloggedWidget.setZLevel(100);
         addWidget(waterloggedWidget);
 
         y+=rowHeight;
         //pistonBehavior
         addDrawableChild(new TextWidget(30, y, 120, 20, Text.literal("Piston behavior"), textRenderer).alignLeft());
-        equalsOperatorsWidget = new WidgetDropDownList<>(130, y, 50, 20, 60, 2, Scan.equalsOperatorsValues);
+        equalsOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 60, 2, Scan.equalsOperatorsValues);
         equalsOperatorsWidget.setZLevel(100);
         addWidget(equalsOperatorsWidget);
-        pistonBehaviorWidget = new WidgetDropDownList<>(190, y, 70, 20, 60, 2, pistonBehaviorValues);
+        pistonBehaviorWidget = new ToggelableWidgedDropDownList<>(190, y, 70, 20, 60, 2, pistonBehaviorValues);
         pistonBehaviorWidget.setZLevel(100);
         addWidget(pistonBehaviorWidget);
 
         y+=rowHeight;
         //blastResistance
         addDrawableChild(new TextWidget(30, y, 120, 20, Text.literal("Blast resistance"), textRenderer).alignLeft());
-        comparisonOperatorsWidget = new WidgetDropDownList<>(130, y, 50, 20, 60, 2, Scan.comparisonOperatorsValues);
+        comparisonOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 60, 2, Scan.comparisonOperatorsValues);
         comparisonOperatorsWidget.setZLevel(100);
         addWidget(comparisonOperatorsWidget);
         blastResistanceValue = new TextFieldWidget(textRenderer, 190, y, 30, 20, Text.empty());
@@ -137,10 +131,15 @@ public class WhitelistEditorScreen extends ScreenPlus {
             add(new WhitelistItem(Blocks.WATER, null, null, null));
             add(new WhitelistItem(null, "true", null, null));
         }}, "Fluids and Waterlogged");
+        Whitelist quarry = new Whitelist(new ArrayList<>(){{
+            add(new WhitelistItem(null, null, ">9", null));
+            add(new WhitelistItem(null, null, null, "=IMMOVABLE"));
+        }}, "Quarry");
 
         list.add(worldEater);
         list.add(fluidsAndWaterlogged);
-        WidgetDropDownList<Whitelist> presets = new WidgetDropDownList<>(width - 180, 30, 150, 20, 100, 5, list);
+        list.add(quarry);
+        ToggelableWidgedDropDownList<Whitelist> presets = new ToggelableWidgedDropDownList<>(width - 180, 30, 150, 20, 100, 5, list);
         addWidget(presets);
         addDrawableChild(ButtonWidget.builder(Text.literal("Use"), btn -> {
             if(presets.getSelectedEntry() != null){

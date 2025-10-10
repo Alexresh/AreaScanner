@@ -10,6 +10,8 @@
   "arenascanner.config.generic.comment.selectedBlocksMaxDistance": "-1 = ∞",
   "arenascanner.config.generic.name.selectedBlocksMoveMaxDistance": "Selected blocks move max distance",
   "arenascanner.config.generic.comment.selectedBlocksMoveMaxDistance": "todo",
+  "arenascanner.config.generic.name.oldRender": "Switch to old render version",
+  "arenascanner.config.generic.comment.oldRender": "",
   "arenascanner.config.generic.name.selectedBlocksMoveMinDistance": "Selected blocks move min distance",
   "arenascanner.config.generic.comment.selectedBlocksMoveMinDistance": "todo",
   "arenascanner.config.generic.name.unloadedChunkYOffset": "Unscanned chunks y-offset",

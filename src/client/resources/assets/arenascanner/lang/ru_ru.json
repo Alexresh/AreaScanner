@@ -10,6 +10,8 @@
   "arenascanner.config.generic.comment.selectedBlocksMaxDistance": "-1 = ∞",
   "arenascanner.config.generic.name.selectedBlocksMoveMaxDistance": "Максимальное расстояние перемещения выделенных блоков",
   "arenascanner.config.generic.comment.selectedBlocksMoveMaxDistance": "На этом расстоянии от игрока они будут на уровне глаз",
+  "arenascanner.config.generic.name.oldRender": "Переключиться на старый рендер",
+  "arenascanner.config.generic.comment.oldRender": "",
   "arenascanner.config.generic.name.selectedBlocksMoveMinDistance": "Минимальное расстояние перемешения выделенных блоков",
   "arenascanner.config.generic.comment.selectedBlocksMoveMinDistance": "На этом расстоянии от игрока они будут полностью в блоке",
   "arenascanner.config.generic.name.unloadedChunkYOffset": "Смещение непросканированных чанков по y",
@@ -22,6 +24,8 @@
   "arenascanner.config.generic.comment.selectedBlocksColor": "",
   "arenascanner.config.generic.name.processCooldown": "Задержка между сканированиями",
   "arenascanner.config.generic.comment.processCooldown": "уменьшение этого значения увеличивает нагрузку",
+  "arenascanner.config.generic.name.lookRandomSelectedBlock": "Посмотреть на случайный выделенный блок",
+  "arenascanner.config.generic.comment.lookRandomSelectedBlock": "",
   "arenascanner.config.generic.name.mainHotkey": "Настройки",
   "arenascanner.config.generic.comment.mainHotkey": "открывает это окно",
   "arenascanner.config.generic.name.mainRender": "Главный рендер",
@@ -37,7 +41,5 @@
   "arenascanner.config.hud.name.uncheckedChunksHudColor": "Цвет непросканированных чанков в худе",
   "arenascanner.config.hud.comment.uncheckedChunksHudColor": "",
   "arenascanner.config.hud.name.hudScale": "Масштаб худа",
-  "arenascanner.config.hud.comment.hudScale": "В разработке",
-  "arenascanner.config.generic.name.lookRandomSelectedBlock": "Посмотреть на случайный выделенный блок",
-  "arenascanner.config.generic.comment.lookRandomSelectedBlock": ""
+  "arenascanner.config.hud.comment.hudScale": "В разработке"
 }

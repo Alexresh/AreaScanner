@@ -46,7 +46,7 @@ public class RenderUtil {
 
                 for (ChunkPos unloadedPos : renderChunksList){
                     if(unloadedPos != null && context.camera().getPos().distanceTo(new Vec3d(unloadedPos.getCenterX(), context.camera().getBlockPos().getY(), unloadedPos.getCenterZ())) < Config.Generic.UNLOADED_CHUNK_MAX_DISTANCE.getIntegerValue()) {
-                        renderBlock(unloadedPos.getCenterAtY(context.camera().getBlockPos().getY() + Config.Generic.UNLOADED_CHUNK_Y_OFFSET.getIntegerValue()),
+                        renderChunk(unloadedPos.getCenterAtY(context.camera().getBlockPos().getY() + Config.Generic.UNLOADED_CHUNK_Y_OFFSET.getIntegerValue()),
                                 context.matrixStack(),
                                 ((WorldRendererAccessor)context.worldRenderer()).getBufferBuilders().getOutlineVertexConsumers(),
                                 Color4f.fromColor(Config.Generic.UNLOADED_CHUNK_COLOR.getIntegerValue()),
@@ -57,12 +57,14 @@ public class RenderUtil {
                     float scale = (float) Math.min(1, context.camera().getPos().squaredDistanceTo(block.toCenterPos()) / 500);
                     scale = Math.max(scale, 0.05f);
                     if(context.camera().getPos().distanceTo(block.toCenterPos()) < Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() || Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() == -1){
-                        renderBlock2(
-                                block,
-                                context.matrixStack(),
-                                ((WorldRendererAccessor)context.worldRenderer()).getBufferBuilders().getOutlineVertexConsumers(),
-                                Color4f.fromColor(Config.Generic.SELECTED_BLOCKS_COLOR.getIntegerValue()),
-                                scale);
+                        if(Config.Generic.OLD_RENDER.getBooleanValue()){
+                            oldRenderBlock(block, context.matrixStack(),
+                                    ((WorldRendererAccessor)context.worldRenderer()).getBufferBuilders().getOutlineVertexConsumers(),
+                                    Color4f.fromColor(Config.Generic.SELECTED_BLOCKS_COLOR.getIntegerValue()),
+                                    scale);
+                        }else{
+                            maliRenderBlock(block, Color4f.fromColor(Config.Generic.SELECTED_BLOCKS_COLOR.getIntegerValue()));
+                        }
                     }
 
                 }
@@ -86,7 +88,7 @@ public class RenderUtil {
     }
 
     //original
-    private static void renderBlock(BlockPos pos, MatrixStack matrices, OutlineVertexConsumerProvider vertexConsumers, Color4f color, float scale){
+    private static void renderChunk(BlockPos pos, MatrixStack matrices, OutlineVertexConsumerProvider vertexConsumers, Color4f color, float scale){
         matrices.push();
         matrices.translate(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
         matrices.scale(scale, scale, scale);
@@ -99,7 +101,7 @@ public class RenderUtil {
         matrices.pop();
     }
     //original
-    private static void renderBlock1(BlockPos pos, MatrixStack matrices, OutlineVertexConsumerProvider vertexConsumers, Color4f color, float baseScale) {
+    private static void oldRenderBlock(BlockPos pos, MatrixStack matrices, OutlineVertexConsumerProvider vertexConsumers, Color4f color, float baseScale) {
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         Vec3d cameraPos = camera.getPos();
         double dx = pos.getX() + 0.5 - cameraPos.x;
@@ -130,12 +132,11 @@ public class RenderUtil {
         matrices.pop();
     }
 
-    private static void renderBlock2(BlockPos pos, MatrixStack matrices, OutlineVertexConsumerProvider vertexConsumers, Color4f color, float baseScale) {
+    private static void maliRenderBlock(BlockPos pos, Color4f color) {
         RenderSystem.enableBlend();
         RenderSystem.disableCull();
 
         RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-        //RenderSystem.setShader(GameRenderer::getPositionColorProgram);
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
         BuiltBuffer meshData;
@@ -148,8 +149,6 @@ public class RenderUtil {
         double renderY = MathHelper.lerp(t, pos.getY() + 0.5, cameraPos.y);
         float farHeightScale = 8.0f;
         float scaleY = distXZ - Config.Generic.SELECTED_BLOCKS_MOVE_MIN_DISTANCE.getIntegerValue() < 0 ? 0 : farHeightScale;
-
-
 
         renderAreaSidesBatched(pos.withY((int) renderY), pos.withY((int)renderY).offset(Direction.Axis.Y, (int)scaleY), color, 0.002, buffer, MinecraftClient.getInstance());
 
@@ -181,8 +180,6 @@ public class RenderUtil {
 
         RenderUtils.drawBoxAllSidesBatchedQuads((float) minX, (float) minY, (float) minZ, (float) maxX, (float) maxY, (float) maxZ, fi.dy.masa.malilib.util.Color4f.fromColor(color.getIntValue()) , buffer);
     }
-
-
 
     private static VertexConsumer setColorFromHex(OutlineVertexConsumerProvider vertexConsumers, Color4f hexColor) {
         vertexConsumers.setColor(hexColor.ri, hexColor.gi, hexColor.bi, hexColor.ai);

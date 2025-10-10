@@ -100,7 +100,7 @@ public class Scan {
     public static long getAllChunksCounter(){return allChunksCounter;}
 
     public static void processChunk(ClientWorld world, ChunkPos chunkPos){
-        if(range == null || world == null || whitelist == null || chunkPos == null) return;
+        if(!processing || range == null || world == null || whitelist == null || chunkPos == null) return;
         if(!world.getChunkManager().isChunkLoaded(chunkPos.x, chunkPos.z)) return;
         if((chunkPos.x >= range.getMinX() >> 4) && (chunkPos.x <= range.getMaxX() >> 4) && (chunkPos.z >= range.getMinZ() >> 4) && (chunkPos.z <= range.getMaxZ() >> 4)){
             //delete destroyed blocks from selected blocks
@@ -143,8 +143,7 @@ public class Scan {
         }
     }
     private static void checkProcessing(){
-        //todo сбрасывается когда готовишься просканировать
-        if(selectedBlocks.isEmpty() && unloadedChunks.isEmpty()) {
+        if(processing && selectedBlocks.isEmpty() && unloadedChunks.isEmpty()) {
             if(MinecraftClient.getInstance().player != null){
                 MinecraftClient.getInstance().player.sendMessage(Text.literal("Scan finished"),false);
                 MinecraftClient.getInstance().player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
@@ -233,22 +232,17 @@ public class Scan {
                     insideMeet = false;// или throw, или пропустить
                 }
                 try {
-                    if(behaviorPart.equals("IMMOVABLE")){
-                        if(!blockState.getBlock().getDefaultState().isIn(MaLiLibTag.Blocks.IMMOVABLE_BLOCKS)){
-                            insideMeet = false;
-                        }
-                    }else{
-                        PistonBehavior behavior = PistonBehavior.valueOf(behaviorPart);
-                        PistonBehavior actual = blockState.getPistonBehavior();
-                        boolean matches = switch (operator) {
-                            case "=" -> actual == behavior;
-                            case "≠" -> actual != behavior;
-                            default -> false;
-                        };
-                        if (!matches) {
-                            insideMeet = false;
-                        }
+                    String actual = blockState.getBlock().getDefaultState().isIn(MaLiLibTag.Blocks.IMMOVABLE_BLOCKS) ? "IMMOVABLE" : "NORMAL";
+                    actual = blockState.getPistonBehavior() == PistonBehavior.DESTROY ? "DESTROY" : actual;
+                    boolean matches = switch (operator) {
+                        case "=" -> actual.equals(behaviorPart);
+                        case "≠" -> !actual.equals(behaviorPart);
+                        default -> false;
+                    };
+                    if (!matches) {
+                        insideMeet = false;
                     }
+
                 }catch (Exception e){
                     References.LOGGER.error("[add block]PistonBehavior is corrupted");
                     insideMeet = false;

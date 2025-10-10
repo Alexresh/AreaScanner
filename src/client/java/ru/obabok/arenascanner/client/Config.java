@@ -27,7 +27,8 @@ public class Config implements IConfigHandler {
         public static final ConfigInteger UNLOADED_CHUNK_Y_OFFSET = new ConfigInteger("unloadedChunkYOffset", -50).apply(GENERIC_KEY);
         public static final ConfigFloat UNLOADED_CHUNK_SCALE = new ConfigFloat("unloadedChunkScale", 4.0f).apply(GENERIC_KEY);
         public static final ConfigColor UNLOADED_CHUNK_COLOR = new ConfigColor("unloadedChunkColor", "#00ffec59").apply(GENERIC_KEY);
-        public static final ConfigColor SELECTED_BLOCKS_COLOR = new ConfigColor("selectedBlocksColor", "#FF4dd091").apply(GENERIC_KEY);
+        public static final ConfigColor SELECTED_BLOCKS_COLOR = new ConfigColor("selectedBlocksColor", "#6BD71B1B").apply(GENERIC_KEY);
+        public static final ConfigBoolean OLD_RENDER = new ConfigBoolean("oldRender", false).apply(GENERIC_KEY);
         public static final ConfigInteger PROCESS_COOLDOWN = new ConfigInteger("processCooldown", 20).apply(GENERIC_KEY);
         public static final ConfigInteger SELECTED_BLOCKS_MOVE_MAX_DISTANCE = new ConfigInteger("selectedBlocksMoveMaxDistance", 200).apply(GENERIC_KEY);
         public static final ConfigInteger SELECTED_BLOCKS_MOVE_MIN_DISTANCE = new ConfigInteger("selectedBlocksMoveMinDistance", 170).apply(GENERIC_KEY);
@@ -44,6 +45,7 @@ public class Config implements IConfigHandler {
                 UNLOADED_CHUNK_SCALE,
                 UNLOADED_CHUNK_COLOR,
                 SELECTED_BLOCKS_COLOR,
+                OLD_RENDER,
                 PROCESS_COOLDOWN,
                 LOOK_RANDOM_SELECTED_BLOCK,
                 MAIN_RENDER,
