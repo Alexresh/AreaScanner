@@ -18,6 +18,7 @@ import ru.obabok.arenascanner.client.util.WhitelistManager;
 import ru.obabok.arenascanner.client.models.WhitelistItem;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class WhitelistEditorScreen extends ScreenPlus {
@@ -31,7 +32,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
     private final WhitelistItem createdWhitelistItem = new WhitelistItem(null, null, null, null);
     private ButtonWidget addToWhitelistBtn;
     private static final List<String> waterloggedValues = List.of("true", "false");
-    public static List<String> pistonBehaviorValues = List.of("IMMOVABLE", "DESTROY", "NORMAL");
+    public static List<String> pistonBehaviorValues = Arrays.stream(Scan.PistonBehavior.values()).map(Enum::toString).toList();
 
 
     private ToggelableWidgedDropDownList<String> waterloggedWidget;
@@ -60,9 +61,6 @@ public class WhitelistEditorScreen extends ScreenPlus {
         int from = currentPage * BLOCKS_PER_PAGE;
         int to = Math.min(from + BLOCKS_PER_PAGE, current_whitelist.size());
         List<WhitelistItem> pageBlocks = current_whitelist.subList(from, to);
-//        if(!pistonBehaviorValues.contains("IMMOVABLE"))
-//            pistonBehaviorValues.add("IMMOVABLE");
-
 
         int rowHeight = 60;
         int y = 30;
@@ -122,6 +120,8 @@ public class WhitelistEditorScreen extends ScreenPlus {
         }
 
         //presets
+        addDrawableChild(new TextWidget(width - 130, 10, 100, 20, Text.literal("Presets"), textRenderer).alignRight());
+
         List<Whitelist> list = new ArrayList<>();
         Whitelist worldEater = new Whitelist(new ArrayList<>(){{
             add(new WhitelistItem(null, null, ">9", "≠DESTROY"));

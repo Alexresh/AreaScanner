@@ -1,8 +1,6 @@
 package ru.obabok.arenascanner.client;
 
-import fi.dy.masa.malilib.data.MaLiLibTag;
 import net.minecraft.block.*;
-import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.fluid.FluidState;
@@ -12,12 +10,15 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.World;
 import ru.obabok.arenascanner.client.models.ScanState;
 import ru.obabok.arenascanner.client.models.Whitelist;
 import ru.obabok.arenascanner.client.models.WhitelistItem;
 import ru.obabok.arenascanner.client.util.*;
 
 import java.util.*;
+
+import static net.minecraft.block.PistonBlock.EXTENDED;
 
 public class Scan {
     public static HashSet<BlockPos> selectedBlocks = new HashSet<>();
@@ -29,6 +30,12 @@ public class Scan {
     private static String currentFilename;
     public static final List<String> comparisonOperatorsValues = List.of("=", "≠", ">", "<", "≥", "≤");
     public static final List<String> equalsOperatorsValues = List.of("=", "≠");
+    public enum PistonBehavior {
+            NORMAL,
+            IMMOVABLE,
+            DESTROY
+    }
+
 
     public static int executeAsync(ClientWorld world, BlockBox _range, String filename){
         stopScan();
@@ -110,7 +117,7 @@ public class Scan {
                 for (int y = range.getMinY(); y <= range.getMaxY(); y++) {
                     for (int z = 0; z < 16; z++) {
                         BlockPos blockPos = new BlockPos(chunkPos.x * 16 + x, y, chunkPos.z * 16 + z);
-                        processBlock(blockPos, world.getBlockState(blockPos));
+                        processBlock(blockPos, world.getBlockState(blockPos), world);
                     }
                 }
             }
@@ -126,7 +133,7 @@ public class Scan {
         while (iterator.hasNext()) {
             BlockPos blockPos = iterator.next();
             if (blockPos.getX() >> 4 == chunkPos.x && blockPos.getZ() >> 4 == chunkPos.z) {
-                if(!checkBlock(world.getBlockState(blockPos))){
+                if(!checkBlock(world.getBlockState(blockPos), world, blockPos)){
                     iterator.remove();
                 }
             }
@@ -153,7 +160,7 @@ public class Scan {
     }
 
 
-    private static boolean checkBlock(BlockState blockState){
+    private static boolean checkBlock(BlockState blockState, World world, BlockPos pos){
         boolean meet = false;
         for(WhitelistItem whitelistItem : whitelist.whitelist){
             boolean insideMeet = true;
@@ -232,11 +239,11 @@ public class Scan {
                     insideMeet = false;// или throw, или пропустить
                 }
                 try {
-                    String actual = blockState.getBlock().getDefaultState().isIn(MaLiLibTag.Blocks.IMMOVABLE_BLOCKS) ? "IMMOVABLE" : "NORMAL";
-                    actual = blockState.getPistonBehavior() == PistonBehavior.DESTROY ? "DESTROY" : actual;
+                    PistonBehavior behavior = PistonBehavior.valueOf(behaviorPart);
+                    PistonBehavior actual = isMovable(blockState, world, pos);
                     boolean matches = switch (operator) {
-                        case "=" -> actual.equals(behaviorPart);
-                        case "≠" -> !actual.equals(behaviorPart);
+                        case "=" -> behavior == actual;
+                        case "≠" -> behavior != actual;
                         default -> false;
                     };
                     if (!matches) {
@@ -254,12 +261,12 @@ public class Scan {
     }
 
     //adds blocks to selected blocks
-    public static void processBlock(BlockPos blockPos, BlockState blockState){
+    public static void processBlock(BlockPos blockPos, BlockState blockState, World world){
         if(range == null || whitelist == null) return;
         if(blockPos.getX() <= range.getMaxX() && blockPos.getX() >= range.getMinX() &&
                 blockPos.getY() <= range.getMaxY() && blockPos.getY() >= range.getMinY() &&
                 blockPos.getZ() <= range.getMaxZ() && blockPos.getZ() >= range.getMinZ()){
-            if(checkBlock(blockState)){
+            if(checkBlock(blockState, world, blockPos)){
                 selectedBlocks.add(blockPos);
             }
         }
@@ -269,4 +276,36 @@ public class Scan {
         return blockState.isAir() && fluidState.isEmpty() ? Optional.empty() : Optional.of(Math.max(blockState.getBlock().getBlastResistance(), fluidState.getBlastResistance()));
     }
 
+
+    public static PistonBehavior isMovable(BlockState state, World world, BlockPos pos) {
+        if (state.isAir()) {
+            return PistonBehavior.NORMAL;
+        } else if (!state.isOf(Blocks.OBSIDIAN) && !state.isOf(Blocks.CRYING_OBSIDIAN) && !state.isOf(Blocks.RESPAWN_ANCHOR) && !state.isOf(Blocks.REINFORCED_DEEPSLATE)) {
+
+                if (!state.isOf(Blocks.PISTON) && !state.isOf(Blocks.STICKY_PISTON)) {
+                    if (state.getHardness(world, pos) == -1.0F) {
+                        return PistonBehavior.IMMOVABLE;
+                    }
+
+                    switch (state.getPistonBehavior()) {
+                        case BLOCK -> {
+                            return PistonBehavior.IMMOVABLE;
+                        }
+                        case DESTROY -> {
+                            return PistonBehavior.DESTROY;
+                        }
+                        case PUSH_ONLY -> {
+                            return PistonBehavior.NORMAL;
+                        }
+                    }
+                } else if (state.get(EXTENDED)) {
+                    return PistonBehavior.IMMOVABLE;
+                }
+
+                return (state.hasBlockEntity() ? PistonBehavior.IMMOVABLE : PistonBehavior.NORMAL);
+
+        } else {
+            return PistonBehavior.IMMOVABLE;
+        }
+    }
 }

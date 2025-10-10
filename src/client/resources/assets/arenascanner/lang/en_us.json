@@ -36,6 +36,8 @@
   "arenascanner.config.hud.comment.hudPosX": "Negative values align hud to the right side",
   "arenascanner.config.hud.name.hudPosY": "Hud position y",
   "arenascanner.config.hud.comment.hudPosY": "Negative values align hud to the down",
+  "arenascanner.config.hud.name.hudAlignment": "Hud alignment",
+  "arenascanner.config.hud.comment.hudAlignment": "",
   "arenascanner.config.hud.name.selectedBlocksHudColor": "Selected blocks hud color",
   "arenascanner.config.hud.comment.selectedBlocksHudColor": "",
   "arenascanner.config.hud.name.uncheckedChunksHudColor": "Unchecked chunks hud color",

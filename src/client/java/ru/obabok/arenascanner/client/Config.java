@@ -3,6 +3,7 @@ package ru.obabok.arenascanner.client;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import fi.dy.masa.malilib.config.ConfigUtils;
+import fi.dy.masa.malilib.config.HudAlignment;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigHandler;
 import fi.dy.masa.malilib.config.options.*;
@@ -60,16 +61,14 @@ public class Config implements IConfigHandler {
         public static final ConfigBooleanHotkeyed HUD_ENABLE = new ConfigBooleanHotkeyed("hudEnable", true, "").apply(HUD_KEY);
         public static final ConfigInteger HUD_POS_X = new ConfigInteger("hudPosX", 0).apply(HUD_KEY);
         public static final ConfigInteger HUD_POS_Y = new ConfigInteger("hudPosY", 0).apply(HUD_KEY);
-        public static final ConfigColor HUD_SELECTED_BLOCKS_COLOR = new ConfigColor("selectedBlocksHudColor", "#00FFFFFF").apply(HUD_KEY);
-        public static final ConfigColor HUD_UNCHECKED_CHUNKS_COLOR = new ConfigColor("uncheckedChunksHudColor", "#00FFFFFF").apply(HUD_KEY);
+        public static final ConfigOptionList HUD_ALIGNMENT = new ConfigOptionList("hudAlignment", HudAlignment.BOTTOM_RIGHT).apply(GENERIC_KEY);
         public static final ConfigFloat HUD_SCALE = new ConfigFloat("hudScale", 1.0f).apply(HUD_KEY);
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 HUD_ENABLE,
                 HUD_POS_X,
                 HUD_POS_Y,
-                HUD_SELECTED_BLOCKS_COLOR,
-                HUD_UNCHECKED_CHUNKS_COLOR,
+                HUD_ALIGNMENT,
                 HUD_SCALE
         );
     }

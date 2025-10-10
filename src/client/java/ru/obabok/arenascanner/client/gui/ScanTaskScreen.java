@@ -28,8 +28,6 @@ public class ScanTaskScreen extends ScreenPlus {
     private TextFieldWidget minX, minY, minZ;
     private TextFieldWidget maxX, maxY, maxZ;
     private final List<CoordButton> coordButtons = new ArrayList<>();
-
-
     private ButtonWidget startButton;
 
     protected ScanTaskScreen(Screen parent) {
@@ -53,13 +51,11 @@ public class ScanTaskScreen extends ScreenPlus {
     public void init() {
         super.init();
 
-
         //create whitelists selector
         List<String> whitelistFiles = WhitelistSelectorScreen.getWhitelistFilenames();
         ArrayList<String> list = new ArrayList<>();
         //list.add("WorldEater");
         list.addAll(whitelistFiles);
-
 
         whitelistSelectorList = new ToggelableWidgedDropDownList<>(20,200,160,18,200,10, list);
         whitelistSelectorList.setZLevel(100);
@@ -68,9 +64,6 @@ public class ScanTaskScreen extends ScreenPlus {
         if(Scan.getCurrentFilename() != null){
             whitelistSelectorList.setSelectedEntry(Scan.getCurrentFilename());
         }
-
-
-
 
         int x = 20;
         int y = 20;
@@ -171,14 +164,17 @@ public class ScanTaskScreen extends ScreenPlus {
         addDrawableChild(saveStateBtn);
 
         ButtonWidget loadStateBtn = ButtonWidget.builder(Text.literal("Load state"), btn -> {
-            //client.player.sendMessage(Text.literal(NewScan.loadState() ? "State loaded" : "State didn't load"), true);
-            Scan.loadState();
+            client.player.sendMessage(Text.literal(Scan.loadState() ? "State loaded" : "State didn't load"), true);
             this.close();
         }).position(370, height - 30).size(90, 20).build();
         loadStateBtn.active = !Scan.getProcessing();
         addDrawableChild(loadStateBtn);
     }
 
+    @Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+
+    }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {

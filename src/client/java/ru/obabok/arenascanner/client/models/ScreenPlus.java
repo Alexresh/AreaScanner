@@ -3,9 +3,7 @@ package ru.obabok.arenascanner.client.models;
 import fi.dy.masa.malilib.gui.widgets.WidgetBase;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,14 +19,11 @@ public class ScreenPlus extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
         this.drawWidgets(mouseX, mouseY, context);
         this.drawHoveredWidget(mouseX, mouseY, context);
-        super.render(context, mouseX, mouseY, delta);
     }
-    @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
 
-    }
 
     public boolean onMouseClicked(int mouseX, int mouseY, int mouseButton)
     {

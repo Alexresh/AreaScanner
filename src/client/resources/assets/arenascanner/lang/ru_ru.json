@@ -36,6 +36,8 @@
   "arenascanner.config.hud.comment.hudPosX": "Отрицательные значения выравнивают худ по правому краю экрана",
   "arenascanner.config.hud.name.hudPosY": "Позиция худа по y",
   "arenascanner.config.hud.comment.hudPosY": "Отрицательные значения выравнивают худ по нижнему краю экрана",
+  "arenascanner.config.hud.name.hudAlignment": "Привязка худа",
+  "arenascanner.config.hud.comment.hudAlignment": "",
   "arenascanner.config.hud.name.selectedBlocksHudColor": "Цвет выделенных блоков в худе",
   "arenascanner.config.hud.comment.selectedBlocksHudColor": "",
   "arenascanner.config.hud.name.uncheckedChunksHudColor": "Цвет непросканированных чанков в худе",

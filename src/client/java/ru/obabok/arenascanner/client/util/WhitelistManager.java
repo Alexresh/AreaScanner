@@ -20,7 +20,6 @@ import java.nio.file.Path;
 public class WhitelistManager {
     private static final Gson GSON = new GsonBuilder()
             .registerTypeHierarchyAdapter(Block.class, new BlockSerializer())
-            //.registerTypeAdapter(Optional.class, new OptionalTypeSerializer())
             .setPrettyPrinting()
             .create();
     public static final String stringWhitelistsPath = "config/ArenaScanner/scan_whitelists";
@@ -31,6 +30,7 @@ public class WhitelistManager {
     public static void saveData(Whitelist data, String filename) {
         try {
             Files.createDirectories(pathToWhitelists);
+            filename = filename.replace(' ', '_');
             try (Writer writer = Files.newBufferedWriter(pathToWhitelists.resolve(filename), StandardCharsets.UTF_8)) {
                 GSON.toJson(data, writer);
             }
@@ -58,6 +58,7 @@ public class WhitelistManager {
     }
 
     public static boolean createWhitelist(String name) {
+        name = name.replace(' ', '_');
         Path toFile = Path.of(stringWhitelistsPath, name + ".json");
         File file = toFile.toFile();
         Path.of(stringWhitelistsPath).toFile().mkdirs();

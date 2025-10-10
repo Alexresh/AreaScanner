@@ -1,44 +1,38 @@
 package ru.obabok.arenascanner.client.util;
 
-import net.minecraft.client.MinecraftClient;
+import fi.dy.masa.malilib.config.HudAlignment;
+import fi.dy.masa.malilib.render.RenderUtils;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.util.Colors;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import ru.obabok.arenascanner.client.Config;
 import ru.obabok.arenascanner.client.Scan;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import static ru.obabok.arenascanner.client.util.References.LOGGER;
 
 
 public class HudRender {
 
-
+    private static final List<String> lines = new ArrayList<>();
     public static void render(DrawContext drawContext) {
         if (Config.Generic.MAIN_RENDER.getBooleanValue() && Config.Hud.HUD_ENABLE.getBooleanValue()) {
-            int windowWidth = drawContext.getScaledWindowWidth();
-            int windowHeight = drawContext.getScaledWindowHeight();
-            int hudStartX = Config.Hud.HUD_POS_X.getIntegerValue() >= 0
-                    ? Config.Hud.HUD_POS_X.getIntegerValue()
-                    : windowWidth + Config.Hud.HUD_POS_X.getIntegerValue();
-            int hudStartY = Config.Hud.HUD_POS_Y.getIntegerValue() >= 0
-                    ? Config.Hud.HUD_POS_Y.getIntegerValue()
-                    : windowHeight + Config.Hud.HUD_POS_Y.getIntegerValue();
-            drawContext.getMatrices().push();
-            drawContext.getMatrices().scale(Config.Hud.HUD_SCALE.getFloatValue(),Config.Hud.HUD_SCALE.getFloatValue(),0);
+            lines.clear();
+
+            if(!ChunkScheduler.getChunkQueue().isEmpty()){
+                String processedChunksText = "ProcessedChunks: %d".formatted(ChunkScheduler.getChunkQueue().size());
+                lines.add(processedChunksText);
+            }
+
             try {
                 if(!Scan.selectedBlocks.isEmpty()){
                     BlockPos pos = Scan.selectedBlocks.iterator().next();
                     String selectedBlocksText = "Selected blocks: %d -> [%d, %d, %d]".formatted(Scan.selectedBlocks.size(), pos.getX(), pos.getY(), pos.getZ());
-                    int textWidthSelected = MinecraftClient.getInstance().textRenderer.getWidth(selectedBlocksText);
-                    int posX = hudStartX;
-                    if (Config.Hud.HUD_POS_X.getIntegerValue() < 0) {
-                        posX -= textWidthSelected;
-                    }
-
-                    drawContext.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, Text.literal(selectedBlocksText), posX, hudStartY, Config.Hud.HUD_SELECTED_BLOCKS_COLOR.getIntegerValue());
+                    lines.add(selectedBlocksText);
                 }
             }catch (Exception exception){
                 LOGGER.error(exception.getMessage());
@@ -49,28 +43,15 @@ public class HudRender {
                     Iterator<ChunkPos> iterator = Scan.unloadedChunks.iterator();
                     if(iterator.hasNext()){
                         String unloadedChunksText = "Unchecked chunks: %d -> %s".formatted(Scan.unloadedChunks.size(), iterator.next().toString());
-                        int textWidthUnloaded = MinecraftClient.getInstance().textRenderer.getWidth(unloadedChunksText);
-                        int posX = hudStartX;
-                        if (Config.Hud.HUD_POS_X.getIntegerValue() < 0) {
-                            posX -= textWidthUnloaded;
-                        }
-                        drawContext.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, Text.literal(unloadedChunksText), posX, hudStartY + 10, Config.Hud.HUD_UNCHECKED_CHUNKS_COLOR.getIntegerValue());
+                        lines.add(unloadedChunksText);
                     }
                 }catch (Exception exception){
                     LOGGER.error(exception.getMessage());
                 }
 
             }
-            if(!ChunkScheduler.getChunkQueue().isEmpty()){
-                String processedChunksText = "ProcessedChunks: %d".formatted(ChunkScheduler.getChunkQueue().size());
-                int textWidthUnloaded = MinecraftClient.getInstance().textRenderer.getWidth(processedChunksText);
-                int posX = hudStartX;
-                if (Config.Hud.HUD_POS_X.getIntegerValue() < 0) {
-                    posX -= textWidthUnloaded;
-                }
-                drawContext.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, Text.literal(processedChunksText), posX, hudStartY + 20, 0xFFFFFFFF);
-            }
-            drawContext.getMatrices().pop();
+
+            RenderUtils.renderText(Config.Hud.HUD_POS_X.getIntegerValue(), Config.Hud.HUD_POS_Y.getIntegerValue(), Config.Hud.HUD_SCALE.getFloatValue(), Colors.WHITE, Colors.BLACK, (HudAlignment)Config.Hud.HUD_ALIGNMENT.getOptionListValue(), false, false, lines, drawContext);
         }
     }
 }
