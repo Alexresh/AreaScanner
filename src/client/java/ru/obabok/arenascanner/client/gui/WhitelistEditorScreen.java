@@ -92,7 +92,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         y+=rowHeight;
         //blastResistance
         addDrawableChild(new TextWidget(30, y, 120, 20, Text.literal("Blast resistance"), textRenderer).alignLeft());
-        comparisonOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 60, 2, Scan.comparisonOperatorsValues);
+        comparisonOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 100, 4, Scan.comparisonOperatorsValues);
         comparisonOperatorsWidget.setZLevel(100);
         addWidget(comparisonOperatorsWidget);
         blastResistanceValue = new TextFieldWidget(textRenderer, 190, y, 30, 20, Text.empty());
@@ -177,7 +177,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
                         WhitelistManager.saveData(new Whitelist(current_whitelist), filename);
                         client.setScreen(new WhitelistEditorScreen(parent, filename, 0));
                     }
-                }).dimensions(120, height - 30, 120, 20).build();
+                }).dimensions(30, 280, 120, 20).build();
         addDrawableChild(addToWhitelistBtn);
 
     }
@@ -211,7 +211,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
 
 
         addToWhitelistBtn.active = validateCreatedWhitelistItem();
-        context.drawText(textRenderer, Text.literal(createdWhitelistItem.toString()), 30,height - 50, Colors.WHITE, true);
         super.render(context, mouseX, mouseY, delta);
+        context.drawText(textRenderer, Text.literal(createdWhitelistItem.toString()), 30,250, Colors.WHITE, true);
     }
 }
