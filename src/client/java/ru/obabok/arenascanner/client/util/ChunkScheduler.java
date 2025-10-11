@@ -21,19 +21,13 @@ public class ChunkScheduler {
     public static void startProcessing() {
         chunkScheduledFuture = schedulerChunk.scheduleAtFixedRate(() -> {
             try {
-                ChunkPos chunkPos = chunkQueue.poll();
-
-                if (chunkPos == null) {
-                    return;
-                }
-
-                MinecraftClient client = MinecraftClient.getInstance();
-                if (client.world == null) {
-                    return;
-                }
-
-                if (client.world.getChunkManager().isChunkLoaded(chunkPos.x, chunkPos.z)) {
-                    Scan.processChunk(client.world, chunkPos);
+                boolean processing = true;
+                while (processing){
+                    ChunkPos chunkPos = chunkQueue.poll();
+                    if (chunkPos != null && MinecraftClient.getInstance().world != null && MinecraftClient.getInstance().world.getChunkManager().isChunkLoaded(chunkPos.x, chunkPos.z)) {
+                        processing = false;
+                        Scan.processChunk(MinecraftClient.getInstance().world, chunkPos);
+                    }
                 }
 
             }catch (Exception e){
