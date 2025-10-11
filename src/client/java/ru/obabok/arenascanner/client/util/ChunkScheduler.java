@@ -12,21 +12,28 @@ import java.util.concurrent.*;
 public class ChunkScheduler {
 
     private static final Queue<ChunkPos> chunkQueue = new ConcurrentLinkedQueue<>();
-    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(0);
+    private static final ScheduledExecutorService schedulerChunk = Executors.newScheduledThreadPool(0);
     private static final ScheduledExecutorService schedulerRender = Executors.newScheduledThreadPool(0);
-    private static ScheduledFuture<?> scheduledFuture;
+    private static ScheduledFuture<?> chunkScheduledFuture;
+    private static ScheduledFuture<?> renderScheduledFuture;
     private static long period = 30;
 
     public static void startProcessing() {
-        scheduledFuture = scheduler.scheduleAtFixedRate(() -> {
+        chunkScheduledFuture = schedulerChunk.scheduleAtFixedRate(() -> {
             try {
-                boolean processing = true;
-                while (processing){
-                    ChunkPos chunkPos = chunkQueue.poll();
-                    if (chunkPos != null && MinecraftClient.getInstance().world != null && MinecraftClient.getInstance().world.getChunkManager().isChunkLoaded(chunkPos.x, chunkPos.z)) {
-                        processing = false;
-                        Scan.processChunk(MinecraftClient.getInstance().world, chunkPos);
-                    }
+                ChunkPos chunkPos = chunkQueue.poll();
+
+                if (chunkPos == null) {
+                    return;
+                }
+
+                MinecraftClient client = MinecraftClient.getInstance();
+                if (client.world == null) {
+                    return;
+                }
+
+                if (client.world.getChunkManager().isChunkLoaded(chunkPos.x, chunkPos.z)) {
+                    Scan.processChunk(client.world, chunkPos);
                 }
 
             }catch (Exception e){
@@ -35,7 +42,8 @@ public class ChunkScheduler {
 
         }, 0, period, TimeUnit.MILLISECONDS);
 
-        schedulerRender.scheduleAtFixedRate(() -> {
+
+        renderScheduledFuture = schedulerRender.scheduleAtFixedRate(() -> {
             try {
                 RenderUtil.clearRender();
                 RenderUtil.addAllRenderBlocks(Scan.selectedBlocks);
@@ -48,12 +56,16 @@ public class ChunkScheduler {
     }
 
     public static void updatePeriod(long newPeriod) {
-        if (scheduledFuture != null) {
-            scheduledFuture.cancel(false);
+        if (chunkScheduledFuture != null) {
+            chunkScheduledFuture.cancel(false);
+        }
+        if(renderScheduledFuture != null){
+            renderScheduledFuture.cancel(false);
         }
         period = newPeriod;
         startProcessing();
     }
+
     public static Queue<ChunkPos> getChunkQueue(){
         return chunkQueue;
     }

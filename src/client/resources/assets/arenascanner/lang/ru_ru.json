@@ -22,6 +22,8 @@
   "arenascanner.config.generic.comment.unloadedChunkColor": "",
   "arenascanner.config.generic.name.selectedBlocksColor": "Цвет выделенных блоков",
   "arenascanner.config.generic.comment.selectedBlocksColor": "",
+  "arenascanner.config.generic.name.realtimeUpdate": "Обновление в реальном времени",
+  "arenascanner.config.generic.comment.realtimeUpdate": "Обновление любого блока вызывает пересканирование всего чанка (влияет на производительность)",
   "arenascanner.config.generic.name.processCooldown": "Задержка между сканированиями",
   "arenascanner.config.generic.comment.processCooldown": "уменьшение этого значения увеличивает нагрузку",
   "arenascanner.config.generic.name.lookRandomSelectedBlock": "Посмотреть на случайный выделенный блок",

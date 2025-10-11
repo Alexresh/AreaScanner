@@ -24,7 +24,7 @@ public class ScanCommand {
                                                 .executes(context -> Scan.executeAsync(context.getSource().getWorld(), BlockBox.create(
                                                                 CBlockPosArgument.getBlockPos(context, "from"),
                                                                 CBlockPosArgument.getBlockPos(context, "to")),
-                                                        StringArgumentType.getString(context, "whitelist")))))
+                                                        StringArgumentType.getString(context, "whitelist")))))))
                 .then(literal("stop").executes(context -> {
                     Scan.stopScan();
                     return 1;
@@ -38,7 +38,7 @@ public class ScanCommand {
                                         .executes(context -> WhitelistManager.deleteWhitelist(StringArgumentType.getString(context, "whitelist")) ? 1 : 0)))
                         .then(literal("print")
                                 .then(argument("whitelist", StringArgumentType.string()).suggests(new FileSuggestionProvider())
-                                        .executes(context -> WhitelistManager.printWhitelist(context.getSource().getPlayer(), StringArgumentType.getString(context, "whitelist")))))))));
+                                        .executes(context -> WhitelistManager.printWhitelist(context.getSource().getPlayer(), StringArgumentType.getString(context, "whitelist")))))));
 
     }
 }

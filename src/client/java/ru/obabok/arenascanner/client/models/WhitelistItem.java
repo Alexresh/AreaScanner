@@ -1,6 +1,5 @@
 package ru.obabok.arenascanner.client.models;
 
-import com.google.gson.annotations.Expose;
 import net.minecraft.block.Block;
 import org.jetbrains.annotations.Nullable;
 

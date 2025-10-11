@@ -159,7 +159,6 @@ public class Scan {
         }
     }
 
-
     private static boolean checkBlock(BlockState blockState, World world, BlockPos pos){
         boolean meet = false;
         for(WhitelistItem whitelistItem : whitelist.whitelist){
@@ -170,8 +169,7 @@ public class Scan {
 
             //waterlogged
             if (whitelistItem.waterlogged != null) {
-                boolean waterlogged = blockState.getProperties().contains(Properties.WATERLOGGED) &&
-                        blockState.getFluidState().getBlastResistance() > 0.0f;
+                boolean waterlogged = blockState.get(Properties.WATERLOGGED, false);
                 if (Boolean.parseBoolean(whitelistItem.waterlogged) != waterlogged) {
                     insideMeet = false;
                 }
@@ -192,34 +190,32 @@ public class Scan {
                         }
                     }
                     if (operator == null || numberPart.isEmpty()) {
-                        References.LOGGER.warn("[add block] invalid blastResistance format: {}", whitelistItem.blastResistance);
+                        References.LOGGER.warn("invalid blastResistance format: {}", whitelistItem.blastResistance);
                         return false;
                     }
                     if (!isParsableToInt(numberPart)) {
-                        References.LOGGER.warn("[add block] invalid number in blastResistance: {}", numberPart);
+                        References.LOGGER.warn("invalid number in blastResistance: {}", numberPart);
                         return false;
                     }
                     int threshold = Integer.parseInt(numberPart);
-                    if(getBlastResistance(state, state.getFluidState()).isPresent()){
-                        float actualResistance = getBlastResistance(state, state.getFluidState()).get();
-                        boolean matches = switch (operator) {
-                            case "=" -> actualResistance == threshold;
-                            case "≠" -> actualResistance != threshold;
-                            case ">"  -> actualResistance >  threshold;
-                            case "<"  -> actualResistance <  threshold;
-                            case "≥" -> actualResistance >= threshold;
-                            case "≤" -> actualResistance <= threshold;
-                            default -> false;
-                        };
-                        if (!matches) {
-                            insideMeet = false;
-                        }
+
+                    float actualResistance = resistanceOpt.get();
+                    boolean matches = switch (operator) {
+                        case "=" -> actualResistance == threshold;
+                        case "≠" -> actualResistance != threshold;
+                        case ">"  -> actualResistance >  threshold;
+                        case "<"  -> actualResistance <  threshold;
+                        case "≥" -> actualResistance >= threshold;
+                        case "≤" -> actualResistance <= threshold;
+                        default -> false;
+                    };
+                    if (!matches) {
+                        insideMeet = false;
                     }
                 }else{
                     insideMeet = false;
                 }
             }
-
             //pistonBehavior
             if(whitelistItem.pistonBehavior != null){
                 String input = whitelistItem.pistonBehavior.trim();
@@ -235,7 +231,7 @@ public class Scan {
                 }
                 if (operator == null || behaviorPart.isEmpty()) {
                     // Неверный формат
-                    References.LOGGER.warn("[add block] invalid pistonBehavior format: {}", whitelistItem.pistonBehavior);
+                    References.LOGGER.warn("invalid pistonBehavior format: {}", whitelistItem.pistonBehavior);
                     insideMeet = false;// или throw, или пропустить
                 }
                 try {
@@ -251,7 +247,7 @@ public class Scan {
                     }
 
                 }catch (Exception e){
-                    References.LOGGER.error("[add block]PistonBehavior is corrupted");
+                    References.LOGGER.error("PistonBehavior is corrupted");
                     insideMeet = false;
                 }
             }

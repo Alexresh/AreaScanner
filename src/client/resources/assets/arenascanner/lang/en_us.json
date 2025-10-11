@@ -22,6 +22,8 @@
   "arenascanner.config.generic.comment.unloadedChunkColor": "todo",
   "arenascanner.config.generic.name.selectedBlocksColor": "Selected blocks render color",
   "arenascanner.config.generic.comment.selectedBlocksColor": "todo",
+  "arenascanner.config.generic.name.realtimeUpdate": "Realtime update chunks",
+  "arenascanner.config.generic.comment.realtimeUpdate": "when any block update, chunk will be rescanned (affects performance)",
   "arenascanner.config.generic.name.processCooldown": "Chunk scan cooldown",
   "arenascanner.config.generic.comment.processCooldown": "todo",
   "arenascanner.config.generic.name.lookRandomSelectedBlock": "Looks at random selected block",

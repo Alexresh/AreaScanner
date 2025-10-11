@@ -149,8 +149,8 @@ public class RenderUtil {
         double renderY = MathHelper.lerp(t, pos.getY() + 0.5, cameraPos.y);
         float farHeightScale = 8.0f;
         float scaleY = distXZ - Config.Generic.SELECTED_BLOCKS_MOVE_MIN_DISTANCE.getIntegerValue() < 0 ? 0 : farHeightScale;
-
-        renderAreaSidesBatched(pos.withY((int) renderY), pos.withY((int)renderY).offset(Direction.Axis.Y, (int)scaleY), color, 0.002, buffer, MinecraftClient.getInstance());
+        int renderYInt = MathHelper.floor(renderY);
+        renderAreaSidesBatched(pos.withY(renderYInt), pos.withY(renderYInt).offset(Direction.Axis.Y, (int)scaleY), color, 0.002, buffer, MinecraftClient.getInstance());
 
         try
         {

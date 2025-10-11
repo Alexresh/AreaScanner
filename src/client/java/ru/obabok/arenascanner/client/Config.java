@@ -31,6 +31,7 @@ public class Config implements IConfigHandler {
         public static final ConfigColor SELECTED_BLOCKS_COLOR = new ConfigColor("selectedBlocksColor", "#6BD71B1B").apply(GENERIC_KEY);
         public static final ConfigBoolean OLD_RENDER = new ConfigBoolean("oldRender", false).apply(GENERIC_KEY);
         public static final ConfigInteger PROCESS_COOLDOWN = new ConfigInteger("processCooldown", 20).apply(GENERIC_KEY);
+        public static final ConfigBoolean REALTIME_UPDATE = new ConfigBoolean("realtimeUpdate", false).apply(GENERIC_KEY);
         public static final ConfigInteger SELECTED_BLOCKS_MOVE_MAX_DISTANCE = new ConfigInteger("selectedBlocksMoveMaxDistance", 200).apply(GENERIC_KEY);
         public static final ConfigInteger SELECTED_BLOCKS_MOVE_MIN_DISTANCE = new ConfigInteger("selectedBlocksMoveMinDistance", 170).apply(GENERIC_KEY);
         public static final ConfigHotkey LOOK_RANDOM_SELECTED_BLOCK = new ConfigHotkey("lookRandomSelectedBlock", "").apply(GENERIC_KEY);
@@ -48,6 +49,7 @@ public class Config implements IConfigHandler {
                 SELECTED_BLOCKS_COLOR,
                 OLD_RENDER,
                 PROCESS_COOLDOWN,
+                REALTIME_UPDATE,
                 LOOK_RANDOM_SELECTED_BLOCK,
                 MAIN_RENDER,
                 MAIN
