@@ -68,9 +68,11 @@ public class RenderUtil {
                     }
 
                 }
-                context.matrixStack().pop();
+
             }catch (Exception ignored){
 
+            }finally {
+                context.matrixStack().pop();
             }
 
         }
