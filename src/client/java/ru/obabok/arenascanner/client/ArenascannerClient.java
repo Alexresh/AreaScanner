@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.event.client.player.ClientPlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.ChunkPos;
 import ru.obabok.arenascanner.client.handlers.InitHandler;
 import ru.obabok.arenascanner.client.util.HudRender;
@@ -20,15 +21,11 @@ import ru.obabok.arenascanner.client.util.ScanCommand;
 
 public class ArenascannerClient implements ClientModInitializer {
 
-
     @Override
     public void onInitializeClient() {
         InitializationHandler.getInstance().registerInitializationHandler(new InitHandler());
         ClientCommandRegistrationCallback.EVENT.register(ScanCommand::register);
-
-        ClientPlayerBlockBreakEvents.AFTER.register((clientWorld, clientPlayerEntity, blockPos, blockState) -> {
-            ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos));
-        });
+        ClientPlayerBlockBreakEvents.AFTER.register((clientWorld, clientPlayerEntity, blockPos, blockState) -> ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos)));
 
         AttackBlockCallback.EVENT.register((playerEntity, world, hand, blockPos, direction) -> {
             if(!world.isClient) return ActionResult.PASS;
@@ -43,8 +40,17 @@ public class ArenascannerClient implements ClientModInitializer {
         });
 
         ClientChunkEvents.CHUNK_LOAD.register((clientWorld, worldChunk) -> {
-            if(Scan.getRange() != null && Scan.unloadedChunks.contains(worldChunk.getPos()))
-                ChunkScheduler.addChunkToProcess(worldChunk.getPos());
+            BlockBox range = Scan.getRange();
+            if (range != null) {
+                ChunkPos chunkPos = worldChunk.getPos();
+                int chunkMinX = chunkPos.getStartX();
+                int chunkMaxX = chunkPos.getEndX();
+                int chunkMinZ = chunkPos.getStartZ();
+                int chunkMaxZ = chunkPos.getEndZ();
+                if (range.intersectsXZ(chunkMinX, chunkMinZ, chunkMaxX, chunkMaxZ)) {
+                    ChunkScheduler.addChunkToProcess(chunkPos);
+                }
+            }
         });
 
         HudRenderCallback.EVENT.register((drawContext, renderTickCounter) -> HudRender.render(drawContext));

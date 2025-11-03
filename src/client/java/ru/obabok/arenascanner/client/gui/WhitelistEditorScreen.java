@@ -106,9 +106,8 @@ public class WhitelistEditorScreen extends ScreenPlus {
             addDrawableChild(ButtonWidget.builder(Text.literal("❌"), btn -> {
                 WhitelistManager.removeFromWhitelist(filename, item);
                 client.setScreen(new WhitelistEditorScreen(parent, filename, currentPage));
-            }).dimensions(width / 2 - 150, y, 20, 20).build());
-
-            TextWidget widget = new TextWidget(width / 2 - 120, y, 400, 20,Text.literal("Condition " + i + "     OR"),textRenderer).alignLeft();
+            }).dimensions(280, y, 20, 20).build());
+            TextWidget widget = new TextWidget(310, y, 120, 20,Text.literal("Condition " + i + "     OR"),textRenderer).alignLeft();
 
             String builder = (item.block == null ? "-\n" : item.block + " AND\n") +
                     (item.waterlogged == null ? "-\n" : "Waterlogged: " + item.waterlogged + " AND\n") +
@@ -132,8 +131,8 @@ public class WhitelistEditorScreen extends ScreenPlus {
             add(new WhitelistItem(null, "true", null, null));
         }}, "Fluids and Waterlogged");
         Whitelist quarry = new Whitelist(new ArrayList<>(){{
-            add(new WhitelistItem(null, null, ">9", null));
             add(new WhitelistItem(null, null, null, "=IMMOVABLE"));
+            add(new WhitelistItem(null, null, ">9", "≠DESTROY"));
         }}, "Quarry");
 
         list.add(worldEater);
@@ -141,16 +140,16 @@ public class WhitelistEditorScreen extends ScreenPlus {
         list.add(quarry);
         ToggelableWidgedDropDownList<Whitelist> presets = new ToggelableWidgedDropDownList<>(width - 180, 30, 150, 20, 100, 5, list);
         addWidget(presets);
-        addDrawableChild(ButtonWidget.builder(Text.literal("Use"), btn -> {
+        addDrawableChild(ButtonWidget.builder(Text.literal("Use preset"), btn -> {
             if(presets.getSelectedEntry() != null){
                 current_whitelist.addAll(presets.getSelectedEntry().whitelist);
                 WhitelistManager.saveData(new Whitelist(current_whitelist), filename);
                 client.setScreen(new WhitelistEditorScreen(parent, filename, 0));
             }
-        }).dimensions(width - 110, 60, 80, 20).build());
+        }).dimensions(width - 110, 115, 80, 20).build());
 
 
-        int buttonY = height - 60;
+        int buttonY = height - 40;
         if (currentPage > 0) {
             addDrawableChild(ButtonWidget.builder(Text.literal("< Prev"), btn ->
                     client.setScreen(new WhitelistEditorScreen(parent, filename, currentPage - 1))
@@ -177,7 +176,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
                         WhitelistManager.saveData(new Whitelist(current_whitelist), filename);
                         client.setScreen(new WhitelistEditorScreen(parent, filename, 0));
                     }
-                }).dimensions(30, 280, 120, 20).build();
+                }).dimensions(30, 260, 90, 20).build();
         addDrawableChild(addToWhitelistBtn);
 
     }
@@ -209,9 +208,12 @@ public class WhitelistEditorScreen extends ScreenPlus {
             createdWhitelistItem.blastResistance = comparisonOperatorsWidget.getSelectedEntry() + blastResistanceValue.getText();
         }else createdWhitelistItem.blastResistance = null;
 
+        //borders
+        context.drawBorder(20,20, 245, 265, Colors.LIGHT_GRAY);
+        context.drawBorder(275,20, 130, height - 80, Colors.LIGHT_GRAY);
 
         addToWhitelistBtn.active = validateCreatedWhitelistItem();
         super.render(context, mouseX, mouseY, delta);
-        context.drawText(textRenderer, Text.literal(createdWhitelistItem.toString()), 30,250, Colors.WHITE, true);
+        context.drawText(textRenderer, Text.literal(createdWhitelistItem.toString()), 30,240, Colors.WHITE, true);
     }
 }

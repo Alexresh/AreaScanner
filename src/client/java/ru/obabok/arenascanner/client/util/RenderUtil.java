@@ -33,9 +33,10 @@ public class RenderUtil {
 
     public static void renderAll(WorldRenderContext context) {
 
-        if(Scan.getRange() != null){
-            BlockPos pos1 = new BlockPos(Scan.getRange().getMinX(), Scan.getRange().getMinY(), Scan.getRange().getMinZ());
-            BlockPos pos2 = new BlockPos(Scan.getRange().getMaxX(), Scan.getRange().getMaxY(), Scan.getRange().getMaxZ());
+        BlockBox scanRange = Scan.getRange();
+        if(scanRange != null){
+            BlockPos pos1 = new BlockPos(scanRange.getMinX(), scanRange.getMinY(), scanRange.getMinZ());
+            BlockPos pos2 = new BlockPos(scanRange.getMaxX(), scanRange.getMaxY(), scanRange.getMaxZ());
             renderAreaOutline(pos1, pos2, 2, Color4f.fromColor(Colors.RED), Color4f.fromColor(Colors.GREEN),Color4f.fromColor(Colors.BLUE), MinecraftClient.getInstance());
         }
 
