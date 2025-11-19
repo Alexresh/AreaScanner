@@ -1,26 +1,22 @@
 {
   "schemaVersion": 1,
-  "id": "arenascanner",
+  "id": "areascanner",
   "version": "${version}",
-  "name": "ArenaScanner",
+  "name": "AreaScanner",
   "description": "",
   "authors": ["obabok", "hopper4et"],
   "contact": {},
   "license": "All-Rights-Reserved",
-  "icon": "assets/arenascanner/none.png",
+  "icon": "assets/areascanner/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": [
-      "ru.obabok.arenascanner.client.ArenascannerClient"
-    ],
-    "main": [
-      "ru.obabok.arenascanner.Arenascanner"
+      "ru.obabok.areascanner.client.AreaScannerClient"
     ]
   },
   "mixins": [
-    "arenascanner.mixins.json",
     {
-      "config": "arenascanner.client.mixins.json",
+      "config": "areascanner.client.mixins.json",
       "environment": "client"
     }
   ],

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ru.obabok.areascanner.client.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "WorldRendererAccessor",
+    "WorldChunkMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
