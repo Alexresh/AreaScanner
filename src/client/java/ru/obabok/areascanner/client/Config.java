@@ -25,11 +25,18 @@ public class Config implements IConfigHandler {
     {
         public static final ConfigInteger UNLOADED_CHUNK_MAX_DISTANCE = new ConfigInteger("unloadedChunkMaxDistance", 300).apply(GENERIC_KEY);
         public static final ConfigInteger SELECTED_BLOCKS_MAX_DISTANCE = new ConfigInteger("selectedBlocksMaxDistance", -1).apply(GENERIC_KEY);
+
         public static final ConfigInteger UNLOADED_CHUNK_Y_OFFSET = new ConfigInteger("unloadedChunkYOffset", -50).apply(GENERIC_KEY);
         public static final ConfigFloat UNLOADED_CHUNK_SCALE = new ConfigFloat("unloadedChunkScale", 4.0f, 0.1f, 20f).apply(GENERIC_KEY);
-        public static final ConfigColor UNLOADED_CHUNK_COLOR = new ConfigColor("unloadedChunkColor", "#00ffec59").apply(GENERIC_KEY);
+
+        public static final ConfigColor UNLOADED_CHUNK_COLOR = new ConfigColor("unloadedChunkColor", "#ffffec59").apply(GENERIC_KEY);
         public static final ConfigColor SELECTED_BLOCKS_COLOR = new ConfigColor("selectedBlocksColor", "#6BD71B1B").apply(GENERIC_KEY);
-        public static final ConfigBoolean OLD_RENDER = new ConfigBoolean("oldRender", false).apply(GENERIC_KEY);
+        public static final ConfigColor AREA_EDGE_COLOR = new ConfigColor("areaEdgeColor", "#30FFFFFF").apply(GENERIC_KEY);
+
+        public static final ConfigBoolean AREA_EDGE_RENDER = new ConfigBoolean("areaEdgeRender", true).apply(GENERIC_KEY);
+        public static final ConfigBoolean OLD_BLOCK_RENDER = new ConfigBoolean("oldBlockRender", false).apply(GENERIC_KEY);
+        public static final ConfigBoolean OLD_CHUNK_RENDER = new ConfigBoolean("oldChunkRender", false).apply(GENERIC_KEY);
+
         public static final ConfigInteger PROCESS_COOLDOWN = new ConfigInteger("processCooldown", 20, 1, 100).apply(GENERIC_KEY);
         public static final ConfigBoolean REALTIME_UPDATE = new ConfigBoolean("realtimeUpdate", false).apply(GENERIC_KEY);
         public static final ConfigInteger SELECTED_BLOCKS_MOVE_MAX_DISTANCE = new ConfigInteger("selectedBlocksMoveMaxDistance", 200).apply(GENERIC_KEY);
@@ -43,17 +50,23 @@ public class Config implements IConfigHandler {
                 SELECTED_BLOCKS_MAX_DISTANCE,
                 SELECTED_BLOCKS_MOVE_MAX_DISTANCE,
                 SELECTED_BLOCKS_MOVE_MIN_DISTANCE,
+
                 UNLOADED_CHUNK_Y_OFFSET,
                 UNLOADED_CHUNK_SCALE,
+
                 UNLOADED_CHUNK_COLOR,
                 SELECTED_BLOCKS_COLOR,
-                OLD_RENDER,
+                AREA_EDGE_COLOR,
+
+                AREA_EDGE_RENDER,
+                OLD_BLOCK_RENDER,
+                OLD_CHUNK_RENDER,
+
                 PROCESS_COOLDOWN,
                 REALTIME_UPDATE,
                 LOOK_RANDOM_SELECTED_BLOCK,
                 MAIN_RENDER,
                 MAIN
-
         );
     }
 

@@ -13,6 +13,7 @@ import net.minecraft.command.argument.EntityAnchorArgumentType;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
+import org.joml.Matrix4f;
 import ru.obabok.areascanner.client.Config;
 import ru.obabok.areascanner.client.Scan;
 import ru.obabok.areascanner.client.mixin.WorldRendererAccessor;
@@ -30,13 +31,17 @@ public class RenderUtil {
     private static final RenderLayer RENDER_LAYER = RenderLayer.getOutline(Identifier.of(References.MOD_ID, "none1.png"));
     private static final List<BlockPos> renderBlocksList = new CopyOnWriteArrayList<>();
     private static final List<ChunkPos> renderChunksList = new CopyOnWriteArrayList<>();
+
     public static void renderAll(WorldRenderContext context) {
         if(!Config.Generic.MAIN_RENDER.getBooleanValue()) return;
+        if(MinecraftClient.getInstance().options.hudHidden) return;
         BlockBox scanRange = Scan.getRange();
         if(scanRange != null){
             BlockPos pos1 = new BlockPos(scanRange.getMinX(), scanRange.getMinY(), scanRange.getMinZ());
             BlockPos pos2 = new BlockPos(scanRange.getMaxX(), scanRange.getMaxY(), scanRange.getMaxZ());
             renderAreaOutline(pos1, pos2, 2, Color4f.fromColor(Colors.RED), Color4f.fromColor(Colors.GREEN),Color4f.fromColor(Colors.BLUE), MinecraftClient.getInstance());
+            if(Config.Generic.AREA_EDGE_RENDER.getBooleanValue())
+                renderAreaEdges(context, pos1, pos2);
         }
 
         if(!renderChunksList.isEmpty() || !renderBlocksList.isEmpty()){
@@ -46,18 +51,22 @@ public class RenderUtil {
 
                 for (ChunkPos unloadedPos : renderChunksList){
                     if(unloadedPos != null && context.camera().getPos().distanceTo(new Vec3d(unloadedPos.getCenterX(), context.camera().getBlockPos().getY(), unloadedPos.getCenterZ())) < Config.Generic.UNLOADED_CHUNK_MAX_DISTANCE.getIntegerValue()) {
-                        renderChunk(unloadedPos.getCenterAtY(context.camera().getBlockPos().getY() + Config.Generic.UNLOADED_CHUNK_Y_OFFSET.getIntegerValue()),
-                                context.matrixStack(),
-                                ((WorldRendererAccessor)context.worldRenderer()).getBufferBuilders().getOutlineVertexConsumers(),
-                                Color4f.fromColor(Config.Generic.UNLOADED_CHUNK_COLOR.getIntegerValue()),
-                                Config.Generic.UNLOADED_CHUNK_SCALE.getFloatValue());
+                        if(Config.Generic.OLD_CHUNK_RENDER.getBooleanValue()){
+                            renderChunk(unloadedPos.getCenterAtY(context.camera().getBlockPos().getY() + Config.Generic.UNLOADED_CHUNK_Y_OFFSET.getIntegerValue()),
+                                    context.matrixStack(),
+                                    ((WorldRendererAccessor)context.worldRenderer()).getBufferBuilders().getOutlineVertexConsumers(),
+                                    Color4f.fromColor(Config.Generic.UNLOADED_CHUNK_COLOR.getIntegerValue()),
+                                    Config.Generic.UNLOADED_CHUNK_SCALE.getFloatValue());
+                        }else{
+                            drawPlane(context, unloadedPos);
+                        }
                     }
                 }
                 for (BlockPos block : renderBlocksList){
                     float scale = (float) Math.min(1, context.camera().getPos().squaredDistanceTo(block.toCenterPos()) / 500);
                     scale = Math.max(scale, 0.05f);
                     if(context.camera().getPos().distanceTo(block.toCenterPos()) < Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() || Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() == -1){
-                        if(Config.Generic.OLD_RENDER.getBooleanValue()){
+                        if(Config.Generic.OLD_BLOCK_RENDER.getBooleanValue()){
                             oldRenderBlock(block, context.matrixStack(),
                                     ((WorldRendererAccessor)context.worldRenderer()).getBufferBuilders().getOutlineVertexConsumers(),
                                     Color4f.fromColor(Config.Generic.SELECTED_BLOCKS_COLOR.getIntegerValue()),
@@ -77,6 +86,51 @@ public class RenderUtil {
 
         }
     }
+
+    private static void drawPlane(WorldRenderContext context, ChunkPos pos) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null || client.world == null) return;
+
+        double startX = pos.getStartX();
+        double startZ = pos.getStartZ();
+        double endX = startX + 16;
+        double endZ = startZ + 16;
+        double planeY = client.player.getY() + Config.Generic.UNLOADED_CHUNK_Y_OFFSET.getIntegerValue();
+
+        // Сохраняем предыдущие настройки рендеринга
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableCull();
+        RenderSystem.depthMask(false);
+        RenderSystem.disableDepthTest();
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        MatrixStack matrices = context.matrixStack();
+        Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
+
+
+        // Вершины плоскости - используй чистые мировые координаты БЕЗ смещения камеры
+        buffer.vertex(positionMatrix, (float)startX, (float)planeY, (float)startZ)
+                .color(Config.Generic.UNLOADED_CHUNK_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)endX, (float)planeY, (float)startZ)
+                .color(Config.Generic.UNLOADED_CHUNK_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)endX, (float)planeY, (float)endZ)
+                .color(Config.Generic.UNLOADED_CHUNK_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)startX, (float)planeY, (float)endZ)
+                .color(Config.Generic.UNLOADED_CHUNK_COLOR.getIntegerValue());
+
+        BufferRenderer.drawWithGlobalProgram(buffer.end());
+
+        // Восстанавливаем настройки рендеринга
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
+        RenderSystem.enableCull();
+        RenderSystem.disableBlend();
+    }
+
     public static void lookRandomSelectedBlock(){
         if(MinecraftClient.getInstance().player == null) return;
         Random random = new Random();
@@ -134,8 +188,12 @@ public class RenderUtil {
     }
 
     private static void maliRenderBlock(BlockPos pos, Color4f color) {
+
         RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
+        RenderSystem.depthMask(false);
+        RenderSystem.disableDepthTest();
 
         RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
         Tessellator tessellator = Tessellator.getInstance();
@@ -161,6 +219,8 @@ public class RenderUtil {
         }
         catch (Exception ignored) { }
 
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
     }
@@ -213,6 +273,86 @@ public class RenderUtil {
 
         drawBoundingBoxEdges((float) minX, (float) minY, (float) minZ, (float) maxX, (float) maxY, (float) maxZ, colorX, colorY, colorZ);
     }
+
+    private static void renderAreaEdges(WorldRenderContext context, BlockPos pos1, BlockPos pos2) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.world == null) return;
+
+        double minX = Math.min(pos1.getX(), pos2.getX());
+        double minY = Math.min(pos1.getY(), pos2.getY());
+        double minZ = Math.min(pos1.getZ(), pos2.getZ());
+        double maxX = Math.max(pos1.getX(), pos2.getX()) + 1;
+        double maxY = Math.max(pos1.getY(), pos2.getY()) + 1;
+        double maxZ = Math.max(pos1.getZ(), pos2.getZ()) + 1;
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableCull();
+        RenderSystem.depthMask(false);
+        RenderSystem.disableDepthTest();
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        // Сохраняем текущее состояние матриц
+        MatrixStack matrices = context.matrixStack();
+        matrices.push();
+
+        // Откатываем преобразование камеры - получаем чистую мировую матрицу
+        Camera camera = context.camera();
+        matrices.translate(-camera.getPos().x, -camera.getPos().y, -camera.getPos().z);
+
+        Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
+
+        // Нижняя грань (пол)
+        buffer.vertex(positionMatrix, (float)minX, (float)minY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)minY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)minY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)minX, (float)minY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+
+        // Верхняя грань (потолок)
+        buffer.vertex(positionMatrix, (float)minX, (float)maxY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)minX, (float)maxY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)maxY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)maxY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+
+        // Передняя грань (север - Z min)
+        buffer.vertex(positionMatrix, (float)minX, (float)minY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)minX, (float)maxY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)maxY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)minY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+
+        // Задняя грань (юг - Z max)
+        buffer.vertex(positionMatrix, (float)minX, (float)minY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)minY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)maxY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)minX, (float)maxY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+
+        // Левая грань (запад - X min)
+        buffer.vertex(positionMatrix, (float)minX, (float)minY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)minX, (float)minY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)minX, (float)maxY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)minX, (float)maxY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+
+        // Правая грань (восток - X max)
+        buffer.vertex(positionMatrix, (float)maxX, (float)minY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)maxY, (float)minZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)maxY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+        buffer.vertex(positionMatrix, (float)maxX, (float)minY, (float)maxZ).color(Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
+
+        BufferRenderer.drawWithGlobalProgram(buffer.end());
+
+        // Восстанавливаем матрицы
+        matrices.pop();
+
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
+        RenderSystem.enableCull();
+        RenderSystem.disableBlend();
+    }
+
+
     private static void drawBoundingBoxEdges(float minX, float minY, float minZ, float maxX, float maxY, float maxZ, Color4f colorX, Color4f colorY, Color4f colorZ)
     {
         Tessellator tessellator = Tessellator.getInstance();

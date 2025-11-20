@@ -54,7 +54,7 @@ public class AreaScannerClient implements ClientModInitializer {
         });
 
         HudRenderCallback.EVENT.register((drawContext, renderTickCounter) -> HudRender.render(drawContext));
-        WorldRenderEvents.AFTER_ENTITIES.register(RenderUtil::renderAll);
+        WorldRenderEvents.AFTER_TRANSLUCENT.register(RenderUtil::renderAll);
         ChunkScheduler.startProcessing();
 
 
