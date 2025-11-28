@@ -18,10 +18,7 @@ import ru.obabok.areascanner.client.Config;
 import ru.obabok.areascanner.client.Scan;
 import ru.obabok.areascanner.client.mixin.WorldRendererAccessor;
 
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -42,6 +39,14 @@ public class RenderUtil {
             renderAreaOutline(pos1, pos2, 2, Color4f.fromColor(Colors.RED), Color4f.fromColor(Colors.GREEN),Color4f.fromColor(Colors.BLUE), MinecraftClient.getInstance());
             if(Config.Generic.AREA_EDGE_RENDER.getBooleanValue())
                 renderAreaEdges(context, pos1, pos2);
+        }
+
+        //test render process scheduler
+        if (!ChunkScheduler.getChunkQueue().isEmpty()){
+            Queue<ChunkPos> queue = ChunkScheduler.getChunkQueue();
+            queue.forEach(chunkPos -> {
+                renderAreaEdges(context, chunkPos.getStartPos(), chunkPos.getStartPos().add(16,100,16));
+            });
         }
 
         if(!renderChunksList.isEmpty() || !renderBlocksList.isEmpty()){

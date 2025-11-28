@@ -4,6 +4,7 @@ import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.registry.Registries;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
@@ -11,6 +12,11 @@ import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
+import org.luaj.vm2.Globals;
+import org.luaj.vm2.LuaFunction;
+import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.lib.jme.JmePlatform;
 import ru.obabok.areascanner.client.models.ScanState;
 import ru.obabok.areascanner.client.models.Whitelist;
 import ru.obabok.areascanner.client.models.WhitelistItem;
@@ -158,6 +164,40 @@ public class Scan {
             stopScan();
         }
     }
+    //test lua
+    private static LuaFunction filterFunc;
+    public static void initLua(){
+        String script = "function luaShouldInclude(blockInfo)\n" +
+                "    if blockInfo.pistonBehavior ~= \"DESTROY\" and blockInfo.blastResistance ~= nil and blockInfo.blastResistance > 9 then\n" +
+                "        return true\n" +
+                "    end\n" +
+                "    return false\n" +
+                "end";
+        Globals globals = JmePlatform.standardGlobals();
+        globals.load(script).call();
+        filterFunc = (LuaFunction) globals.get(LuaValue.valueOf("luaShouldInclude"));
+    }
+
+    //test lua
+    public static boolean luaShouldInclude(BlockState blockState, World world, BlockPos pos) {
+        LuaTable args = LuaValue.tableOf();
+        String blockName = Registries.BLOCK.getId(blockState.getBlock()).toString();
+        args.set("block", LuaValue.valueOf(blockName));
+        args.set("x", LuaValue.valueOf(pos.getX()));
+        args.set("y", LuaValue.valueOf(pos.getY()));
+        args.set("z", LuaValue.valueOf(pos.getZ()));
+
+        args.set("waterlogged", LuaValue.valueOf(blockState.get(Properties.WATERLOGGED, false)));
+
+        Optional<Float> resistanceOpt = getBlastResistance(blockState, blockState.getFluidState());
+        resistanceOpt.ifPresent(aFloat -> args.set("blastResistance", LuaValue.valueOf(aFloat)));
+
+        PistonBehavior actual = isMovable(blockState, world, pos);
+        args.set("pistonBehavior", LuaValue.valueOf(actual.toString()));
+
+        LuaValue result = filterFunc.call(args);
+        return result.checkboolean();
+    }
 
     private static boolean checkBlock(BlockState blockState, World world, BlockPos pos){
         boolean meet = false;
@@ -262,9 +302,12 @@ public class Scan {
         if(blockPos.getX() <= range.getMaxX() && blockPos.getX() >= range.getMinX() &&
                 blockPos.getY() <= range.getMaxY() && blockPos.getY() >= range.getMinY() &&
                 blockPos.getZ() <= range.getMaxZ() && blockPos.getZ() >= range.getMinZ()){
-            if(checkBlock(blockState, world, blockPos)){
+            if(luaShouldInclude(blockState, world, blockPos)){
                 selectedBlocks.add(blockPos);
             }
+//            if(checkBlock(blockState, world, blockPos)){
+//                selectedBlocks.add(blockPos);
+//            }
         }
         checkProcessing();
     }

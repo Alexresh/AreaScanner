@@ -41,6 +41,7 @@ dependencies {
     include modImplementation("dev.xpple:clientarguments:${project.clientarguments_version}")
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modImplementation "com.github.sakura-ryoko:malilib:${project.malilib_version}"
+    implementation 'com.github.luaj:luaj:v3.0.1'
 }
 
 processResources {

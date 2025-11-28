@@ -18,11 +18,12 @@ import ru.obabok.areascanner.client.util.RenderUtil;
 import ru.obabok.areascanner.client.util.ChunkScheduler;
 import ru.obabok.areascanner.client.util.ScanCommand;
 
-
 public class AreaScannerClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        //test lua
+        Scan.initLua();
         InitializationHandler.getInstance().registerInitializationHandler(new InitHandler());
         ClientCommandRegistrationCallback.EVENT.register(ScanCommand::register);
         ClientPlayerBlockBreakEvents.AFTER.register((clientWorld, clientPlayerEntity, blockPos, blockState) -> ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos)));
