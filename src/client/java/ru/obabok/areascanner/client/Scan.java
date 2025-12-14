@@ -94,6 +94,7 @@ public class Scan {
         allChunksCounter = 0;
         range = null;
         currentFilename = null;
+        ChunkScheduler.clearQueue();
         RenderUtil.clearRender();
         processing = false;
     }
@@ -302,12 +303,12 @@ public class Scan {
         if(blockPos.getX() <= range.getMaxX() && blockPos.getX() >= range.getMinX() &&
                 blockPos.getY() <= range.getMaxY() && blockPos.getY() >= range.getMinY() &&
                 blockPos.getZ() <= range.getMaxZ() && blockPos.getZ() >= range.getMinZ()){
-            if(luaShouldInclude(blockState, world, blockPos)){
-                selectedBlocks.add(blockPos);
-            }
-//            if(checkBlock(blockState, world, blockPos)){
+//            if(luaShouldInclude(blockState, world, blockPos)){
 //                selectedBlocks.add(blockPos);
 //            }
+            if(checkBlock(blockState, world, blockPos)){
+                selectedBlocks.add(blockPos);
+            }
         }
         checkProcessing();
     }

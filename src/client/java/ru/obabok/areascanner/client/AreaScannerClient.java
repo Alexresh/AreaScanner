@@ -4,26 +4,25 @@ import fi.dy.masa.malilib.event.InitializationHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.ChunkPos;
 import ru.obabok.areascanner.client.handlers.InitHandler;
-import ru.obabok.areascanner.client.util.HudRender;
-import ru.obabok.areascanner.client.util.RenderUtil;
-import ru.obabok.areascanner.client.util.ChunkScheduler;
-import ru.obabok.areascanner.client.util.ScanCommand;
+import ru.obabok.areascanner.client.util.*;
 
 public class AreaScannerClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
         //test lua
-        Scan.initLua();
+        //Scan.initLua();
         InitializationHandler.getInstance().registerInitializationHandler(new InitHandler());
         ClientCommandRegistrationCallback.EVENT.register(ScanCommand::register);
         ClientPlayerBlockBreakEvents.AFTER.register((clientWorld, clientPlayerEntity, blockPos, blockState) -> ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos)));
@@ -54,7 +53,7 @@ public class AreaScannerClient implements ClientModInitializer {
             }
         });
 
-        HudRenderCallback.EVENT.register((drawContext, renderTickCounter) -> HudRender.render(drawContext));
+        HudLayerRegistrationCallback.EVENT.register(layeredDrawer -> layeredDrawer.attachLayerAfter(IdentifiedLayer.MISC_OVERLAYS, Identifier.of(References.MOD_ID, "hud"), HudRender::render));
         WorldRenderEvents.AFTER_TRANSLUCENT.register(RenderUtil::renderAll);
         ChunkScheduler.startProcessing();
 

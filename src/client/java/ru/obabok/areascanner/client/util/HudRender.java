@@ -4,6 +4,7 @@ import fi.dy.masa.malilib.config.HudAlignment;
 import fi.dy.masa.malilib.render.RenderUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.util.Colors;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -20,7 +21,7 @@ import static ru.obabok.areascanner.client.util.References.LOGGER;
 public class HudRender {
 
     private static final List<String> lines = new ArrayList<>();
-    public static void render(DrawContext drawContext) {
+    public static void render(DrawContext drawContext, RenderTickCounter delta) {
         if (Config.Generic.MAIN_RENDER.getBooleanValue() && Config.Hud.HUD_ENABLE.getBooleanValue() && !MinecraftClient.getInstance().options.hudHidden) {
             lines.clear();
 

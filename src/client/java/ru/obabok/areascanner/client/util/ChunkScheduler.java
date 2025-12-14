@@ -63,6 +63,9 @@ public class ChunkScheduler {
     public static Queue<ChunkPos> getChunkQueue(){
         return chunkQueue;
     }
+    public static void clearQueue(){
+        chunkQueue.clear();
+    }
 
     public static void addChunkToProcess(ChunkPos pos){
         chunkQueue.add(pos);
