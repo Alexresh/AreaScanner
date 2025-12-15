@@ -21,8 +21,6 @@ import ru.obabok.areascanner.client.mixin.WorldRendererAccessor;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-
-
 public class RenderUtil {
     private static final ModelPart.Cuboid CUBE = new ModelPart.Cuboid(0, 0, 0, 0, 0, 16, 16, 16, 0, 0, 0, false, 0, 0, EnumSet.allOf(Direction.class));
     private static final RenderLayer RENDER_LAYER = RenderLayer.getOutline(Identifier.of(References.MOD_ID, "none1.png"));
@@ -67,20 +65,20 @@ public class RenderUtil {
                         }
                     }
                 }
-                for (BlockPos block : renderBlocksList){
-                    float scale = (float) Math.min(1, context.camera().getPos().squaredDistanceTo(block.toCenterPos()) / 500);
-                    scale = Math.max(scale, 0.05f);
-                    if(context.camera().getPos().distanceTo(block.toCenterPos()) < Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() || Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() == -1){
-                        if(Config.Generic.OLD_BLOCK_RENDER.getBooleanValue()){
+                if(Config.Generic.OLD_BLOCK_RENDER.getBooleanValue()){
+                    for (BlockPos block : renderBlocksList){
+                        float scale = (float) Math.min(1, context.camera().getPos().squaredDistanceTo(block.toCenterPos()) / 500);
+                        scale = Math.max(scale, 0.05f);
+                        if(context.camera().getPos().distanceTo(block.toCenterPos()) < Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() || Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() == -1){
                             oldRenderBlock(block, context.matrixStack(),
                                     ((WorldRendererAccessor)context.worldRenderer()).getBufferBuilders().getOutlineVertexConsumers(),
                                     Color4f.fromColor(Config.Generic.SELECTED_BLOCKS_COLOR.getIntegerValue()),
                                     scale);
-                        }else{
-                            maliRenderBlock(block, Color4f.fromColor(Config.Generic.SELECTED_BLOCKS_COLOR.getIntegerValue()));
                         }
-                    }
 
+                    }
+                }else {
+                    maliNewRender(Config.Generic.SELECTED_BLOCKS_COLOR.getIntegerValue());
                 }
 
             }catch (Exception ignored){
@@ -191,6 +189,61 @@ public class RenderUtil {
 
         matrices.pop();
     }
+
+    private static void maliNewRender(int color){
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableCull();
+        RenderSystem.depthMask(false);
+        RenderSystem.disableDepthTest();
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+        Color4f color4f = Color4f.fromColor(color);
+        for (BlockPos pos : RenderUtil.renderBlocksList) {
+            maliRenderBlockIntoBuffer(pos, color4f,  buffer); // ← без отдельного draw!
+        }
+        try {
+            BuiltBuffer meshData = buffer.end();
+            BufferRenderer.drawWithGlobalProgram(meshData);
+            meshData.close();
+        } catch (Exception ignored) { }
+
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
+        RenderSystem.enableCull();
+        RenderSystem.disableBlend();
+    }
+
+    private static void maliRenderBlockIntoBuffer(BlockPos pos, Color4f color, BufferBuilder buffer) {
+        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+        Vec3d cameraPos = camera.getPos();
+
+        double dx = pos.getX() + 0.5 - cameraPos.x;
+        double dz = pos.getZ() + 0.5 - cameraPos.z;
+        double distXZ = Math.sqrt(dx * dx + dz * dz);
+
+        double t = Math.max(0.0, Math.min(1.0,
+                (distXZ - Config.Generic.SELECTED_BLOCKS_MOVE_MIN_DISTANCE.getIntegerValue()) /
+                        (Config.Generic.SELECTED_BLOCKS_MOVE_MAX_DISTANCE.getIntegerValue() - Config.Generic.SELECTED_BLOCKS_MOVE_MIN_DISTANCE.getIntegerValue())
+        ));
+
+        double renderY = MathHelper.lerp(t, pos.getY() + 0.5, cameraPos.y);
+        float farHeightScale = 8.0f;
+        float scaleY = distXZ - Config.Generic.SELECTED_BLOCKS_MOVE_MIN_DISTANCE.getIntegerValue() < 0 ? 0 : farHeightScale;
+        int renderYInt = MathHelper.floor(renderY);
+
+        renderAreaSidesBatched(
+                pos.withY(renderYInt),
+                pos.withY(renderYInt).offset(Direction.Axis.Y, (int) scaleY),
+                color,
+                0.002,
+                buffer,
+                MinecraftClient.getInstance()
+        );
+    }
+
 
     private static void maliRenderBlock(BlockPos pos, Color4f color) {
 
