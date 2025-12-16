@@ -21,8 +21,6 @@ public class AreaScannerClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        //test lua
-        //Scan.initLua();
         InitializationHandler.getInstance().registerInitializationHandler(new InitHandler());
         ClientCommandRegistrationCallback.EVENT.register(ScanCommand::register);
         ClientPlayerBlockBreakEvents.AFTER.register((clientWorld, clientPlayerEntity, blockPos, blockState) -> ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos)));
@@ -56,8 +54,6 @@ public class AreaScannerClient implements ClientModInitializer {
         HudLayerRegistrationCallback.EVENT.register(layeredDrawer -> layeredDrawer.attachLayerAfter(IdentifiedLayer.MISC_OVERLAYS, Identifier.of(References.MOD_ID, "hud"), HudRender::render));
         WorldRenderEvents.AFTER_TRANSLUCENT.register(RenderUtil::renderAll);
         ChunkScheduler.startProcessing();
-
-
     }
 
 }
