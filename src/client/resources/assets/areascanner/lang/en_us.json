@@ -32,6 +32,8 @@
   "areascanner.config.generic.comment.realtimeUpdate": "when any block update, chunk will be rescanned (affects performance)",
   "areascanner.config.generic.name.processCooldown": "Chunk scan cooldown",
   "areascanner.config.generic.comment.processCooldown": "todo",
+  "areascanner.config.generic.name.renderProcessQueue": "Render processed chunks",
+  "areascanner.config.generic.comment.renderProcessQueue": "todo",
   "areascanner.config.generic.name.lookRandomSelectedBlock": "Looks at random selected block",
   "areascanner.config.generic.comment.lookRandomSelectedBlock": "",
   "areascanner.config.generic.name.mainHotkey": "Open config",

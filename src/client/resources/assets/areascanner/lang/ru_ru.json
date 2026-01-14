@@ -32,6 +32,8 @@
   "areascanner.config.generic.comment.realtimeUpdate": "Обновление любого блока вызывает пересканирование всего чанка (влияет на производительность)",
   "areascanner.config.generic.name.processCooldown": "Задержка между сканированиями",
   "areascanner.config.generic.comment.processCooldown": "уменьшение этого значения увеличивает нагрузку",
+  "areascanner.config.generic.name.renderProcessQueue": "Рисовать обрабатываемые чанки",
+  "areascanner.config.generic.comment.renderProcessQueue": "Рисует область вокруг чанка, когда он в очереди обработки",
   "areascanner.config.generic.name.lookRandomSelectedBlock": "Посмотреть на случайный выделенный блок",
   "areascanner.config.generic.comment.lookRandomSelectedBlock": "",
   "areascanner.config.generic.name.mainHotkey": "Настройки",

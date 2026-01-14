@@ -33,11 +33,13 @@ public class Config implements IConfigHandler {
         public static final ConfigColor SELECTED_BLOCKS_COLOR = new ConfigColor("selectedBlocksColor", "#6BD71B1B").apply(GENERIC_KEY);
         public static final ConfigColor AREA_EDGE_COLOR = new ConfigColor("areaEdgeColor", "#30FFFFFF").apply(GENERIC_KEY);
 
-        public static final ConfigBoolean AREA_EDGE_RENDER = new ConfigBoolean("areaEdgeRender", true).apply(GENERIC_KEY);
+        public static final ConfigBoolean AREA_EDGE_RENDER = new ConfigBoolean("areaEdgeRender", false).apply(GENERIC_KEY);
         public static final ConfigBoolean OLD_BLOCK_RENDER = new ConfigBoolean("oldBlockRender", false).apply(GENERIC_KEY);
         public static final ConfigBoolean OLD_CHUNK_RENDER = new ConfigBoolean("oldChunkRender", false).apply(GENERIC_KEY);
 
         public static final ConfigInteger PROCESS_COOLDOWN = new ConfigInteger("processCooldown", 20, 1, 100).apply(GENERIC_KEY);
+        public static final ConfigBoolean RENDER_PROCESS_QUEUE = new ConfigBoolean("renderProcessQueue", false).apply(GENERIC_KEY);
+
         public static final ConfigBoolean REALTIME_UPDATE = new ConfigBoolean("realtimeUpdate", false).apply(GENERIC_KEY);
         public static final ConfigInteger SELECTED_BLOCKS_MOVE_MAX_DISTANCE = new ConfigInteger("selectedBlocksMoveMaxDistance", 200).apply(GENERIC_KEY);
         public static final ConfigInteger SELECTED_BLOCKS_MOVE_MIN_DISTANCE = new ConfigInteger("selectedBlocksMoveMinDistance", 170).apply(GENERIC_KEY);
@@ -63,6 +65,7 @@ public class Config implements IConfigHandler {
                 OLD_CHUNK_RENDER,
 
                 PROCESS_COOLDOWN,
+                RENDER_PROCESS_QUEUE,
                 REALTIME_UPDATE,
                 LOOK_RANDOM_SELECTED_BLOCK,
                 MAIN_RENDER,
