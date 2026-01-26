@@ -17,6 +17,7 @@ import static net.minecraft.server.command.CommandManager.literal;
 public class ScanConfigCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(literal("scanset")
+                .requires(source -> source.hasPermissionLevel(2))
                 .then(argument("key", StringArgumentType.word())
                         .suggests((ctx, builder) -> suggestKeys(builder))
                         .executes(ScanConfigCommand::showCurrentValue)
@@ -34,7 +35,7 @@ public class ScanConfigCommand {
                 }))
                 .then(literal("reset").executes(ctx -> {
                     ServerScanConfig.resetToDefaults();
-                    ctx.getSource().sendFeedback(() -> Text.literal("Config reseted"), true);
+                    ctx.getSource().sendFeedback(() -> Text.literal("Config reset to defaults."), true);
                     return 1;
                 }))
         );
