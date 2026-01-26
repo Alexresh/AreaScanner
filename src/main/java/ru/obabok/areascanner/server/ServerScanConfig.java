@@ -23,7 +23,7 @@ public final class ServerScanConfig {
 
     // Имена параметров (для suggest и валидации)
     public static final String[] KEYS = {
-            "budget", "nbt", "chunks", "packets", "positions", "deltapos", "pendingnbt"
+            "budget", "nbt", "chunks", "packets", "positions", "deltaPos", "pendingNbt", "maxSelectedBlock"
     };
 
 //    public static final int SCAN_BUDGET_MS = 30;
@@ -40,8 +40,9 @@ public final class ServerScanConfig {
             "chunks", 20,
             "packets", 20,
             "positions", 1024,
-            "deltapos", 1024,
-            "pendingnbt", 192
+            "deltaPos", 1024,
+            "pendingNbt", 192,
+            "maxSelectedBlock", 10000
     );
 
     // Ограничения: min, max
@@ -51,8 +52,9 @@ public final class ServerScanConfig {
             "chunks", new int[]{1, 1000},
             "packets", new int[]{1, 1000},
             "positions", new int[]{1, 8192},
-            "deltapos", new int[]{1, 8192},
-            "pendingnbt", new int[]{1, 1024}
+            "deltaPos", new int[]{1, 8192},
+            "pendingNbt", new int[]{1, 1024},
+            "maxSelectedBlock", new int[]{1, 50000}
     );
 
     static {
@@ -87,11 +89,15 @@ public final class ServerScanConfig {
     }
 
     public static int getMaxDeltaPositionsPerPacket() {
-        return VALUES.get("deltapos");
+        return VALUES.get("deltaPos");
     }
 
     public static int getMaxPendingNbt() {
-        return VALUES.get("pendingnbt");
+        return VALUES.get("pendingNbt");
+    }
+
+    public static int getMaxSelectedBlocks(){
+        return VALUES.get("maxSelectedBlock");
     }
 
     public static void load() {

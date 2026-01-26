@@ -16,7 +16,7 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 public class ScanCommand {
 
 
-    public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess commandRegistryAccess) {
+    public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
         dispatcher.register(literal("scan")
                 .then(argument("from", CBlockPosArgument.blockPos())
                         .then(argument("to", CBlockPosArgument.blockPos())

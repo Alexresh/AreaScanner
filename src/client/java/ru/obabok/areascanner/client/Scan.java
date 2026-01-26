@@ -23,7 +23,6 @@ public class Scan {
     private static BlockBox range;
     private static boolean processing = false;
     private static boolean remoteProcessing = false;
-    private static long remoteJobId;
     private static long allChunksCounter;
     private static String currentFilename;
 
@@ -85,7 +84,6 @@ public class Scan {
         allChunksCounter = 0;
         range = null;
         currentFilename = null;
-        remoteJobId = 0;
         remoteProcessing = false;
         ChunkScheduler.clearQueue();
         RenderUtil.clearRender();
@@ -117,7 +115,6 @@ public class Scan {
         range = _range;
         currentFilename = filename;
         allChunksCounter = totalChunks;
-        remoteJobId = jobId;
         if (_range == null) {
             return;
         }

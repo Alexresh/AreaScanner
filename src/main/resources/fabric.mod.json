@@ -5,8 +5,10 @@
   "name": "AreaScanner",
   "description": "",
   "authors": ["obabok", "hopper4et"],
-  "contributors": ["__domen__", "deepseek", "qwen", "mistral ai", "gemini"],
-  "contact": {},
+  "contributors": ["hopper4et", "__domen__", "qwen", "deepseek", "codex", "mistral ai", "gemini"],
+  "contact": {
+    "discord": "https://discord.com/users/393506669532938240"
+  },
   "license": "All-Rights-Reserved",
   "icon": "assets/areascanner/icon.png",
   "environment": "*",

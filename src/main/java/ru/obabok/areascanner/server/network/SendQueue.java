@@ -8,7 +8,7 @@ import ru.obabok.areascanner.server.ServerScanConfig;
 import java.util.ArrayDeque;
 
 public class SendQueue {
-    private static ArrayDeque<Packet> queue = new ArrayDeque<>();
+    private static final ArrayDeque<Packet> queue = new ArrayDeque<>();
 
     public static void addPacket(ServerPlayerEntity player, CustomPayload payload){
         queue.addLast(new Packet(player, payload));

@@ -25,7 +25,7 @@ public class AreaScannerClient implements ClientModInitializer {
     public void onInitializeClient() {
         InitializationHandler.getInstance().registerInitializationHandler(new InitHandler());
         ClientNetwork.register();
-        ClientCommandRegistrationCallback.EVENT.register(ScanCommand::register);
+        ClientCommandRegistrationCallback.EVENT.register((commandDispatcher, commandRegistryAccess) -> ScanCommand.register(commandDispatcher));
         ClientPlayerBlockBreakEvents.AFTER.register((clientWorld, clientPlayerEntity, blockPos, blockState) ->{
             if (Scan.isRemoteProcessing()) {
                 return;

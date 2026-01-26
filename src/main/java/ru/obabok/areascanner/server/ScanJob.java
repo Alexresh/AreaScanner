@@ -72,12 +72,10 @@ public final class ScanJob{
     public void tick(){
         if (!scanCompleted && !owner.networkHandler.isConnectionOpen()) {
             stop("changed world", false);
-            fullComplete = true;
             return;
         }
         if (!scanCompleted && owner.getServerWorld() != world) {
             stop("changed world", false);
-            fullComplete = true;
             return;
         }
 
@@ -239,6 +237,9 @@ public final class ScanJob{
             }
             List<BlockPos> matches = scanChunk(worldChunk, chunkPos);
             selectedBlocks.addAll(matches);
+            if(selectedBlocks.size() > ServerScanConfig.getMaxSelectedBlocks()){
+                stop("too many selected blocks", true);
+            }
 
             markChunkProcessed(chunkPos);
             queueDataPackets(matches);
