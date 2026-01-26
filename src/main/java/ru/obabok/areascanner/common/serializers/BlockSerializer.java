@@ -1,4 +1,4 @@
-package ru.obabok.areascanner.client.serializes;
+package ru.obabok.areascanner.common.serializers;
 
 import com.google.gson.*;
 import net.minecraft.block.Block;

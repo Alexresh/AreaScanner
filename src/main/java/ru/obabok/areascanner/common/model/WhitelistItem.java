@@ -1,4 +1,4 @@
-package ru.obabok.areascanner.client.models;
+package ru.obabok.areascanner.common.model;
 
 import net.minecraft.block.Block;
 import org.jetbrains.annotations.Nullable;

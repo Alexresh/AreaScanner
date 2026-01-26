@@ -13,9 +13,10 @@ import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import ru.obabok.areascanner.client.Scan;
 import ru.obabok.areascanner.client.models.ScreenPlus;
-import ru.obabok.areascanner.client.models.Whitelist;
+import ru.obabok.areascanner.common.BlockMatcher;
+import ru.obabok.areascanner.common.model.Whitelist;
 import ru.obabok.areascanner.client.util.WhitelistManager;
-import ru.obabok.areascanner.client.models.WhitelistItem;
+import ru.obabok.areascanner.common.model.WhitelistItem;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,7 +81,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         y+=rowHeight;
         //pistonBehavior
         addDrawableChild(new TextWidget(30, y, 120, 20, Text.literal("Piston behavior"), textRenderer).alignLeft());
-        equalsOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 60, 2, Scan.equalsOperatorsValues);
+        equalsOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 60, 2, BlockMatcher.EQUALS_OPERATORS);
         equalsOperatorsWidget.setZLevel(100);
         addWidget(equalsOperatorsWidget);
         pistonBehaviorWidget = new ToggelableWidgedDropDownList<>(190, y, 70, 20, 60, 2, pistonBehaviorValues);
@@ -90,7 +91,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         y+=rowHeight;
         //blastResistance
         addDrawableChild(new TextWidget(30, y, 120, 20, Text.literal("Blast resistance"), textRenderer).alignLeft());
-        comparisonOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 100, 4, Scan.comparisonOperatorsValues);
+        comparisonOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 100, 4, BlockMatcher.COMPARISON_OPERATORS);
         comparisonOperatorsWidget.setZLevel(100);
         addWidget(comparisonOperatorsWidget);
         blastResistanceValue = new TextFieldWidget(textRenderer, 190, y, 30, 20, Text.empty());

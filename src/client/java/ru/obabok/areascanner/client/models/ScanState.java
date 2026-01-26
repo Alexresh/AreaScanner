@@ -8,10 +8,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import ru.obabok.areascanner.client.serializes.BlockBoxSerializer;
 import ru.obabok.areascanner.client.serializes.BlockPosSerializer;
-import ru.obabok.areascanner.client.serializes.BlockSerializer;
+import ru.obabok.areascanner.common.serializers.BlockSerializer;
 import ru.obabok.areascanner.client.serializes.ChunkPosSerializer;
 import ru.obabok.areascanner.client.util.WhitelistManager;
-import ru.obabok.areascanner.client.util.References;
+import ru.obabok.areascanner.common.References;
+import ru.obabok.areascanner.common.model.Whitelist;
 
 import java.io.IOException;
 import java.io.Reader;

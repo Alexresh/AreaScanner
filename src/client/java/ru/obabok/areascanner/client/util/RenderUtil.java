@@ -17,6 +17,7 @@ import org.joml.Matrix4f;
 import ru.obabok.areascanner.client.Config;
 import ru.obabok.areascanner.client.Scan;
 import ru.obabok.areascanner.client.mixin.WorldRendererAccessor;
+import ru.obabok.areascanner.common.References;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;

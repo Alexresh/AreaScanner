@@ -3,22 +3,18 @@ package ru.obabok.areascanner.client;
 import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.fluid.FluidState;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import ru.obabok.areascanner.client.models.ScanState;
-import ru.obabok.areascanner.client.models.Whitelist;
-import ru.obabok.areascanner.client.models.WhitelistItem;
+import ru.obabok.areascanner.common.BlockMatcher;
+import ru.obabok.areascanner.common.model.Whitelist;
 import ru.obabok.areascanner.client.util.*;
 
 import java.util.*;
-
-import static net.minecraft.block.PistonBlock.EXTENDED;
 
 public class Scan {
     public static HashSet<BlockPos> selectedBlocks = new HashSet<>();
@@ -26,10 +22,11 @@ public class Scan {
     private static Whitelist whitelist;
     private static BlockBox range;
     private static boolean processing = false;
+    private static boolean remoteProcessing = false;
+    private static long remoteJobId;
     private static long allChunksCounter;
     private static String currentFilename;
-    public static final List<String> comparisonOperatorsValues = List.of("=", "≠", ">", "<", "≥", "≤");
-    public static final List<String> equalsOperatorsValues = List.of("=", "≠");
+
     public enum PistonBehavior {
             NORMAL,
             IMMOVABLE,
@@ -88,6 +85,8 @@ public class Scan {
         allChunksCounter = 0;
         range = null;
         currentFilename = null;
+        remoteJobId = 0;
+        remoteProcessing = false;
         ChunkScheduler.clearQueue();
         RenderUtil.clearRender();
         processing = false;
@@ -99,13 +98,68 @@ public class Scan {
     public static String getCurrentFilename(){
         return currentFilename;
     }
-    public static boolean getProcessing(){
+    public static boolean isProcessing(){
         return processing;
+    }
+    public static boolean isRemoteProcessing() {
+        return remoteProcessing;
     }
     public static BlockBox getRange(){
         return range;
     }
     public static long getAllChunksCounter(){return allChunksCounter;}
+
+
+    public static void startRemoteScan(BlockBox _range, String filename, long jobId, long totalChunks) {
+        stopScan();
+        processing = true;
+        remoteProcessing = true;
+        range = _range;
+        currentFilename = filename;
+        allChunksCounter = totalChunks;
+        remoteJobId = jobId;
+        if (_range == null) {
+            return;
+        }
+        int startChunkX = range.getMinX() >> 4;
+        int startChunkZ = range.getMinZ() >> 4;
+        int endChunkX = range.getMaxX() >> 4;
+        int endChunkZ = range.getMaxZ() >> 4;
+        for (int chunkX = startChunkX; chunkX <= endChunkX; chunkX++) {
+            for (int chunkZ = startChunkZ; chunkZ <= endChunkZ; chunkZ++) {
+                unloadedChunks.add(new ChunkPos(chunkX, chunkZ));
+            }
+        }
+    }
+
+    public static void applyRemoteChunkData(List<BlockPos> positions) {
+        if (!remoteProcessing) return;
+        if (positions == null || positions.isEmpty()) return;
+        selectedBlocks.addAll(positions);
+    }
+
+    public static void applyRemoteDelta(List<BlockPos> positions, boolean add) {
+        if (!remoteProcessing) return;
+        if (positions == null || positions.isEmpty()) return;
+        if (add) {
+            selectedBlocks.addAll(positions);
+            return;
+        }
+        for (BlockPos pos : positions) {
+            selectedBlocks.remove(pos);
+        }
+    }
+
+    public static void markRemoteChunkProcessed(ChunkPos chunkPos) {
+        if (!remoteProcessing) return;
+        unloadedChunks.remove(chunkPos);
+    }
+
+    public static void finishRemoteScanProcessing() {
+        if (!remoteProcessing) return;
+        //dont touch this!
+        processing = false;
+    }
 
     public static void processChunk(ClientWorld world, ChunkPos chunkPos){
         if(!processing || range == null || world == null || whitelist == null || chunkPos == null) return;
@@ -134,22 +188,14 @@ public class Scan {
         while (iterator.hasNext()) {
             BlockPos blockPos = iterator.next();
             if (blockPos.getX() >> 4 == chunkPos.x && blockPos.getZ() >> 4 == chunkPos.z) {
-                if(!checkBlock(world.getBlockState(blockPos), world, blockPos)){
+                if(!BlockMatcher.matches(whitelist, world.getBlockState(blockPos), world, blockPos)){
                     iterator.remove();
                 }
             }
         }
         //checkProcessing();
     }
-    private static boolean isParsableToInt(String str) {
-        if (str == null || str.isEmpty()) return false;
-        try {
-            Integer.parseInt(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
+
     private static void checkProcessing(){
         if(processing && selectedBlocks.isEmpty() && unloadedChunks.isEmpty()) {
             if(MinecraftClient.getInstance().player != null){
@@ -160,149 +206,16 @@ public class Scan {
         }
     }
 
-    private static boolean checkBlock(BlockState blockState, World world, BlockPos pos){
-        boolean meet = false;
-        for(WhitelistItem whitelistItem : whitelist.whitelist){
-            boolean insideMeet = true;
-            if(whitelistItem.block != null && whitelistItem.block != blockState.getBlock()){
-                insideMeet = false;
-            }
-
-            //waterlogged
-            if (whitelistItem.waterlogged != null) {
-                boolean waterlogged = blockState.get(Properties.WATERLOGGED, false);
-                if (Boolean.parseBoolean(whitelistItem.waterlogged) != waterlogged) {
-                    insideMeet = false;
-                }
-            }
-            //blastResistance
-            if(whitelistItem.blastResistance != null){
-                BlockState state = blockState;
-                Optional<Float> resistanceOpt = getBlastResistance(state, state.getFluidState());
-                if(resistanceOpt.isPresent()){
-                    String input = whitelistItem.blastResistance.trim();
-                    String operator = null;
-                    String numberPart = null;
-                    for (String op : comparisonOperatorsValues) {
-                        if (input.startsWith(op)) {
-                            operator = op;
-                            numberPart = input.substring(op.length()).trim();
-                            break;
-                        }
-                    }
-                    if (operator == null || numberPart.isEmpty()) {
-                        References.LOGGER.warn("invalid blastResistance format: {}", whitelistItem.blastResistance);
-                        return false;
-                    }
-                    if (!isParsableToInt(numberPart)) {
-                        References.LOGGER.warn("invalid number in blastResistance: {}", numberPart);
-                        return false;
-                    }
-                    int threshold = Integer.parseInt(numberPart);
-
-                    float actualResistance = resistanceOpt.get();
-                    boolean matches = switch (operator) {
-                        case "=" -> actualResistance == threshold;
-                        case "≠" -> actualResistance != threshold;
-                        case ">"  -> actualResistance >  threshold;
-                        case "<"  -> actualResistance <  threshold;
-                        case "≥" -> actualResistance >= threshold;
-                        case "≤" -> actualResistance <= threshold;
-                        default -> false;
-                    };
-                    if (!matches) {
-                        insideMeet = false;
-                    }
-                }else{
-                    insideMeet = false;
-                }
-            }
-            //pistonBehavior
-            if(whitelistItem.pistonBehavior != null){
-                String input = whitelistItem.pistonBehavior.trim();
-
-                String operator = null;
-                String behaviorPart = null;
-                for (String op : equalsOperatorsValues) {
-                    if (input.startsWith(op)) {
-                        operator = op;
-                        behaviorPart = input.substring(op.length()).trim();
-                        break;
-                    }
-                }
-                if (operator == null || behaviorPart.isEmpty()) {
-                    // Неверный формат
-                    References.LOGGER.warn("invalid pistonBehavior format: {}", whitelistItem.pistonBehavior);
-                    insideMeet = false;// или throw, или пропустить
-                }
-                try {
-                    PistonBehavior behavior = PistonBehavior.valueOf(behaviorPart);
-                    PistonBehavior actual = isMovable(blockState, world, pos);
-                    boolean matches = switch (operator) {
-                        case "=" -> behavior == actual;
-                        case "≠" -> behavior != actual;
-                        default -> false;
-                    };
-                    if (!matches) {
-                        insideMeet = false;
-                    }
-
-                }catch (Exception e){
-                    References.LOGGER.error("PistonBehavior is corrupted");
-                    insideMeet = false;
-                }
-            }
-            meet = meet || insideMeet;
-        }
-        return meet;
-    }
-
     //adds blocks to selected blocks
     public static void processBlock(BlockPos blockPos, BlockState blockState, World world){
         if(range == null || whitelist == null) return;
         if(blockPos.getX() <= range.getMaxX() && blockPos.getX() >= range.getMinX() &&
                 blockPos.getY() <= range.getMaxY() && blockPos.getY() >= range.getMinY() &&
                 blockPos.getZ() <= range.getMaxZ() && blockPos.getZ() >= range.getMinZ()){
-            if(checkBlock(blockState, world, blockPos)){
+            if(BlockMatcher.matches(whitelist, blockState, world, blockPos)){
                 selectedBlocks.add(blockPos);
             }
         }
         checkProcessing();
-    }
-    public static Optional<Float> getBlastResistance(BlockState blockState, FluidState fluidState) {
-        return blockState.isAir() && fluidState.isEmpty() ? Optional.empty() : Optional.of(Math.max(blockState.getBlock().getBlastResistance(), fluidState.getBlastResistance()));
-    }
-
-
-    public static PistonBehavior isMovable(BlockState state, World world, BlockPos pos) {
-        if (state.isAir()) {
-            return PistonBehavior.NORMAL;
-        } else if (!state.isOf(Blocks.OBSIDIAN) && !state.isOf(Blocks.CRYING_OBSIDIAN) && !state.isOf(Blocks.RESPAWN_ANCHOR) && !state.isOf(Blocks.REINFORCED_DEEPSLATE)) {
-
-                if (!state.isOf(Blocks.PISTON) && !state.isOf(Blocks.STICKY_PISTON)) {
-                    if (state.getHardness(world, pos) == -1.0F) {
-                        return PistonBehavior.IMMOVABLE;
-                    }
-
-                    switch (state.getPistonBehavior()) {
-                        case BLOCK -> {
-                            return PistonBehavior.IMMOVABLE;
-                        }
-                        case DESTROY -> {
-                            return PistonBehavior.DESTROY;
-                        }
-                        case PUSH_ONLY -> {
-                            return PistonBehavior.NORMAL;
-                        }
-                    }
-                } else if (state.get(EXTENDED)) {
-                    return PistonBehavior.IMMOVABLE;
-                }
-
-                return (state.hasBlockEntity() ? PistonBehavior.IMMOVABLE : PistonBehavior.NORMAL);
-
-        } else {
-            return PistonBehavior.IMMOVABLE;
-        }
     }
 }

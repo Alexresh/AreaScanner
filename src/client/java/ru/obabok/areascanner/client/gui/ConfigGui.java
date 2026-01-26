@@ -10,7 +10,8 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.sound.SoundEvents;
 import ru.obabok.areascanner.client.Config;
-import ru.obabok.areascanner.client.util.References;
+import ru.obabok.areascanner.client.network.ClientNetwork;
+import ru.obabok.areascanner.common.References;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,18 +39,6 @@ public class ConfigGui extends GuiConfigsBase {
         this.addButton(testBtn, (btn, mousebtn)->{
             client.player.playSound(SoundEvents.AMBIENT_CAVE.value());
             close();
-            return;
-//            if(NewWhitelistManager.loadData("test.json") == null){
-//                ArrayList<WhitelistItem> items = new ArrayList<>(){
-//                    {
-//                        add(new WhitelistItem(Blocks.ACACIA_LEAVES, null, null, null));
-//                        add(new WhitelistItem(null, null, ">9", "!Destroy"));
-//                    }
-//                };
-//
-//                NewWhitelistManager.saveData(new Whitelist(items), "test.json");
-//            }
-//            openGui(new NewWhitelistEditorScreen(this, "test.json",0));
         });
 
 
@@ -59,6 +48,8 @@ public class ConfigGui extends GuiConfigsBase {
         this.addButton(taskButton, (button1, mouseButton) -> {
             openGui(new ScanTaskScreen(this));
         });
+        ButtonGeneric sharedButton = new ButtonGeneric(135, getScreenHeight() - 30, 60, 20, "Shared");
+        this.addButton(sharedButton, (button1, mouseButton) -> ClientNetwork.openSharedScansScreen(this));
     }
     private int createButton(int x, int y, int width, ConfigGuiTab tab)
     {

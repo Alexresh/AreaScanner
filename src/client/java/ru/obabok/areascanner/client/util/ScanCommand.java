@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.util.math.BlockBox;
 import ru.obabok.areascanner.client.Scan;
+import ru.obabok.areascanner.client.network.ClientNetwork;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -21,11 +22,28 @@ public class ScanCommand {
                         .then(argument("to", CBlockPosArgument.blockPos())
                                 .then(literal("whitelist")
                                         .then(argument("whitelist", StringArgumentType.string()).suggests(new FileSuggestionProvider())
-                                                .executes(context -> Scan.executeAsync(context.getSource().getWorld(), BlockBox.create(
-                                                                CBlockPosArgument.getBlockPos(context, "from"),
-                                                                CBlockPosArgument.getBlockPos(context, "to")),
-                                                        StringArgumentType.getString(context, "whitelist")))))))
+                                                .executes(context -> {
+                                                    BlockBox range = BlockBox.create(
+                                                            CBlockPosArgument.getBlockPos(context, "from"),
+                                                            CBlockPosArgument.getBlockPos(context, "to"));
+                                                    String whitelistName = StringArgumentType.getString(context, "whitelist");
+                                                    return Scan.executeAsync(context.getSource().getWorld(), range, whitelistName);
+                                                }).then(argument("shared_name", StringArgumentType.string()).executes(context -> {
+                                                    BlockBox range = BlockBox.create(
+                                                            CBlockPosArgument.getBlockPos(context, "from"),
+                                                            CBlockPosArgument.getBlockPos(context, "to"));
+                                                    String whitelistName = StringArgumentType.getString(context, "whitelist");
+                                                    if (!ClientNetwork.requestScan(range, whitelistName, StringArgumentType.getString(context, "shared_name"))) {
+                                                        return Scan.executeAsync(context.getSource().getWorld(), range, whitelistName);
+                                                    }
+                                                    return 1;
+                                                }))))))
                 .then(literal("stop").executes(context -> {
+                    if (Scan.isRemoteProcessing()) {
+                        ClientNetwork.stopScan();
+                        Scan.stopScan();
+                        return 1;
+                    }
                     Scan.stopScan();
                     return 1;
                 }))

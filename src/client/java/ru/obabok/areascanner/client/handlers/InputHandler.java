@@ -4,7 +4,7 @@ import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.hotkeys.IKeybindManager;
 import fi.dy.masa.malilib.hotkeys.IKeybindProvider;
 import ru.obabok.areascanner.client.Config;
-import ru.obabok.areascanner.client.util.References;
+import ru.obabok.areascanner.common.References;
 import ru.obabok.areascanner.client.gui.ConfigGui;
 import ru.obabok.areascanner.client.util.RenderUtil;
 

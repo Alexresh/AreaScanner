@@ -4,7 +4,7 @@ import fi.dy.masa.malilib.config.ConfigManager;
 import fi.dy.masa.malilib.event.InputEventHandler;
 import fi.dy.masa.malilib.interfaces.IInitializationHandler;
 import ru.obabok.areascanner.client.Config;
-import ru.obabok.areascanner.client.util.References;
+import ru.obabok.areascanner.common.References;
 
 public class InitHandler implements IInitializationHandler {
     @Override

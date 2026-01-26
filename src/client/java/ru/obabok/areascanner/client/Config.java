@@ -12,7 +12,7 @@ import fi.dy.masa.malilib.util.FileUtils;
 import fi.dy.masa.malilib.util.JsonUtils;
 import com.google.common.collect.ImmutableList;
 import ru.obabok.areascanner.client.util.ChunkScheduler;
-import ru.obabok.areascanner.client.util.References;
+import ru.obabok.areascanner.common.References;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,7 +20,7 @@ import java.util.List;
 
 public class Config implements IConfigHandler {
     private static final String CONFIG_FILE_NAME = References.MOD_ID + ".json";
-    private static final String GENERIC_KEY = References.MOD_ID+".config.generic";
+    private static final String GENERIC_KEY = References.MOD_ID + ".config.generic";
     public static class Generic
     {
         public static final ConfigInteger UNLOADED_CHUNK_MAX_DISTANCE = new ConfigInteger("unloadedChunkMaxDistance", 300).apply(GENERIC_KEY);

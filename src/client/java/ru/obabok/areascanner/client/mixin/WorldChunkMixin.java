@@ -28,7 +28,7 @@ public class WorldChunkMixin {
                 World world = ((WorldChunk) (Object) this).getWorld();
                 if (world instanceof ClientWorld) {
                     ChunkPos chunkPos = new ChunkPos(pos);
-                    if(Scan.getProcessing() && !ChunkScheduler.getChunkQueue().contains(chunkPos))
+                    if(Scan.isProcessing() && !ChunkScheduler.getChunkQueue().contains(chunkPos))
                         ChunkScheduler.addChunkToProcess(chunkPos);
                 }
             }

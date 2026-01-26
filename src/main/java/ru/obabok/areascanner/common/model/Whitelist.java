@@ -1,4 +1,4 @@
-package ru.obabok.areascanner.client.models;
+package ru.obabok.areascanner.common.model;
 
 import java.util.ArrayList;
 

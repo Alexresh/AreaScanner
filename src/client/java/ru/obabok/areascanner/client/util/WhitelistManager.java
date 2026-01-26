@@ -5,9 +5,10 @@ import com.google.gson.GsonBuilder;
 import net.minecraft.block.Block;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.text.Text;
-import ru.obabok.areascanner.client.models.Whitelist;
-import ru.obabok.areascanner.client.models.WhitelistItem;
-import ru.obabok.areascanner.client.serializes.BlockSerializer;
+import ru.obabok.areascanner.common.model.Whitelist;
+import ru.obabok.areascanner.common.model.WhitelistItem;
+import ru.obabok.areascanner.common.serializers.BlockSerializer;
+import ru.obabok.areascanner.common.References;
 
 import java.io.File;
 import java.io.IOException;

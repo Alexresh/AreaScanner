@@ -3,6 +3,7 @@ package ru.obabok.areascanner.client.util;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.ChunkPos;
 import ru.obabok.areascanner.client.Scan;
+import ru.obabok.areascanner.common.References;
 
 import java.util.Queue;
 import java.util.concurrent.*;
