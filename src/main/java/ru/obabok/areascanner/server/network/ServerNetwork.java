@@ -23,7 +23,9 @@ public class ServerNetwork {
         NetworkPackets.registerPayloads();
 
         ServerPlayConnectionEvents.JOIN.register((serverPlayNetworkHandler, packetSender, minecraftServer) -> {
-            packetSender.sendPacket(new ServerVersionPayload(FabricLoader.getInstance().getModContainer(References.MOD_ID).get().getMetadata().getVersion().getFriendlyString()));
+            if(FabricLoader.getInstance().getModContainer(References.MOD_ID).isPresent()){
+                packetSender.sendPacket(new ServerVersionPayload(FabricLoader.getInstance().getModContainer(References.MOD_ID).get().getMetadata().getVersion().getFriendlyString()));
+            }
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((serverPlayNetworkHandler, minecraftServer) -> {

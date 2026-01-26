@@ -61,7 +61,7 @@ public class SharedScansScreen extends Screen {
             addDrawableChild(new TextWidget(60, y, width - 120, 12,
                     Text.literal(info.completedScan() ? "✓" : "⏳").formatted(info.completedScan() ? Formatting.GREEN : Formatting.YELLOW).append(Text.literal(title + " (" + owner + ") " + progress)), textRenderer));
 
-            String dimension = info.dimension() == null ? "unknown" : info.dimension().toString();
+            String dimension = info.dimension() == null ? "unknown" : info.dimension();
             String whitelistName = info.whitelistName() == null ? "_" : info.whitelistName();
             String details = "name: " + whitelistName + " dim: " + dimension
                     + " range: " + formatRange(info);

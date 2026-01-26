@@ -25,11 +25,11 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public final class ScanJob{
-    private long jobId;
-    private ServerPlayerEntity owner;
-    private ArrayList<ServerPlayerEntity> subscribers;
-    private BlockBox range;
-    private Whitelist whitelist;
+    private final long jobId;
+    private final ServerPlayerEntity owner;
+    private final ArrayList<ServerPlayerEntity> subscribers;
+    private final BlockBox range;
+    private final Whitelist whitelist;
     private final ServerWorld world;
     private final ArrayDeque<PendingPacket> pendingPackets;
     private boolean scanCompleted;
@@ -43,11 +43,9 @@ public final class ScanJob{
     private boolean fullComplete;
     private final ArrayDeque<DeltaUpdate> pendingDeltas;
     public HashSet<BlockPos> selectedBlocks = new HashSet<>();
-    private String sharedName;
-    private String whitelistName;
+    private final String sharedName;
+    private final String whitelistName;
 
-    private long budgetNs;
-    private long startNs;
     private NbtScannable scannableIOWorker;
 
     public ScanJob(ServerPlayerEntity player, long jobId, BlockBox range, Whitelist whitelist, String sharedName, String whitelistName){
@@ -79,8 +77,8 @@ public final class ScanJob{
             return;
         }
 
-        startNs = System.nanoTime();
-        budgetNs = ServerScanConfig.getBudgetMs()  * 1_000_000L;
+        long startNs = System.nanoTime();
+        long budgetNs = ServerScanConfig.getBudgetMs() * 1_000_000L;
 
         sendPendingPackets();
         if (timeExceeded(startNs, budgetNs)) {
@@ -135,9 +133,7 @@ public final class ScanJob{
     public void subscribe(ServerPlayerEntity player){
         subscribers.remove(player);
         subscribers.add(player);
-        scannedChunks.forEach(aLong -> {
-            SendQueue.addPacket(player, new ScanChunkSummaryPayload(jobId, new ChunkPos(aLong)));
-        });
+        scannedChunks.forEach(scannedChunk -> SendQueue.addPacket(player, new ScanChunkSummaryPayload(jobId, new ChunkPos(scannedChunk))));
         SendQueue.addPacket(player, new ScanCompletePayload(jobId));
         List<BlockPos> blockList = new ArrayList<>(selectedBlocks);
         int max = ServerScanConfig.getMaxDeltaPositionsPerPacket();
@@ -169,9 +165,7 @@ public final class ScanJob{
                 positions.add(next.pos());
                 pendingDeltas.poll();
             }
-            subscribers.forEach(player -> {
-                SendQueue.addPacket(player, new ScanDeltaPayload(jobId, add, positions));
-            });
+            subscribers.forEach(subscriber -> SendQueue.addPacket(subscriber, new ScanDeltaPayload(jobId, add, positions)));
         }
     }
 
@@ -353,9 +347,7 @@ public final class ScanJob{
     }
 
     public void stop(String cause, boolean restart){
-        subscribers.forEach(player -> {
-            SendQueue.addPacket(player, new ScanFullCompletedPayload(jobId, cause, restart));
-        });
+        subscribers.forEach(subscriber -> SendQueue.addPacket(subscriber, new ScanFullCompletedPayload(jobId, cause, restart)));
         fullComplete = true;
     }
 

@@ -108,7 +108,7 @@ public class Scan {
     public static long getAllChunksCounter(){return allChunksCounter;}
 
 
-    public static void startRemoteScan(BlockBox _range, String filename, long jobId, long totalChunks) {
+    public static void startRemoteScan(BlockBox _range, String filename, long totalChunks) {
         stopScan();
         processing = true;
         remoteProcessing = true;
@@ -152,11 +152,11 @@ public class Scan {
         unloadedChunks.remove(chunkPos);
     }
 
-    public static void finishRemoteScanProcessing() {
-        if (!remoteProcessing) return;
-        //dont touch this!
-        processing = false;
-    }
+//    public static void finishRemoteScanProcessing() {
+//        if (!remoteProcessing) return;
+//        //dont touch this!
+//        processing = false;
+//    }
 
     public static void processChunk(ClientWorld world, ChunkPos chunkPos){
         if(!processing || range == null || world == null || whitelist == null || chunkPos == null) return;

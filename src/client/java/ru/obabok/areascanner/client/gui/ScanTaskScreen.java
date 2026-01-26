@@ -55,9 +55,8 @@ public class ScanTaskScreen extends ScreenPlus {
 
         //create whitelists selector
         List<String> whitelistFiles = WhitelistSelectorScreen.getWhitelistFilenames();
-        ArrayList<String> list = new ArrayList<>();
+        ArrayList<String> list = new ArrayList<>(whitelistFiles);
         //list.add("WorldEater");
-        list.addAll(whitelistFiles);
 
         whitelistSelectorList = new ToggelableWidgedDropDownList<>(20,200,160,18,200,10, list);
         whitelistSelectorList.setZLevel(100);

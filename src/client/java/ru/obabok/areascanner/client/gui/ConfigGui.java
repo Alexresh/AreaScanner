@@ -45,9 +45,7 @@ public class ConfigGui extends GuiConfigsBase {
         ButtonGeneric whitelistsButton = new ButtonGeneric(10, getScreenHeight() - 30, 65, 20, "Whitelists");
         this.addButton(whitelistsButton, (button1, mouseButton) -> openGui(new WhitelistSelectorScreen(this, 0)));
         ButtonGeneric taskButton = new ButtonGeneric(85, getScreenHeight() - 30, 40, 20, "Task");
-        this.addButton(taskButton, (button1, mouseButton) -> {
-            openGui(new ScanTaskScreen(this));
-        });
+        this.addButton(taskButton, (button1, mouseButton) -> openGui(new ScanTaskScreen(this)));
         ButtonGeneric sharedButton = new ButtonGeneric(135, getScreenHeight() - 30, 60, 20, "Shared");
         this.addButton(sharedButton, (button1, mouseButton) -> ClientNetwork.openSharedScansScreen(this));
     }

@@ -67,7 +67,7 @@ public class ClientNetwork {
                 return;
             }
             activeJobId = payload.jobId();
-            Scan.startRemoteScan(pending.range, pending.whitelistName, payload.jobId(), payload.totalChunks());
+            Scan.startRemoteScan(pending.range, pending.whitelistName, payload.totalChunks());
 
         });
 

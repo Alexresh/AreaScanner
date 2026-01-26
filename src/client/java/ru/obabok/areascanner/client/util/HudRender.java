@@ -88,7 +88,7 @@ public class HudRender {
         long processed = Math.max(0L, total - Scan.unloadedChunks.size());
         if(total == processed) return;
         updateScanTiming(processed, total);
-        double percent = Math.min(100.0, (processed * 100.0) / Math.max(1L, total));
+        double percent = Math.min(100.0, (processed * 100.0) / total);
         long remaining = Math.max(0L, total - processed);
         String eta = Scan.isRemoteProcessing() ? formatEta(remaining, processed) : "-";
         String mode = Scan.isRemoteProcessing() ? "server" : "client";
