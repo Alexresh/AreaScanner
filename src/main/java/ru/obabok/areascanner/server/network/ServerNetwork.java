@@ -10,10 +10,7 @@ import ru.obabok.areascanner.common.References;
 import ru.obabok.areascanner.common.model.JobInfo;
 import ru.obabok.areascanner.common.model.Whitelist;
 import ru.obabok.areascanner.common.network.payloads.c2s.*;
-import ru.obabok.areascanner.common.network.payloads.s2c.ScanAcceptedPayload;
-import ru.obabok.areascanner.common.network.payloads.s2c.ScanListResponsePayload;
-import ru.obabok.areascanner.common.network.payloads.s2c.ScanRejectedPayload;
-import ru.obabok.areascanner.common.network.payloads.s2c.ServerVersionPayload;
+import ru.obabok.areascanner.common.network.payloads.s2c.*;
 import ru.obabok.areascanner.common.serializers.WhitelistCodec;
 import ru.obabok.areascanner.server.ServerScanManager;
 
@@ -39,7 +36,11 @@ public class ServerNetwork {
 
         ServerPlayNetworking.registerGlobalReceiver(ScanStopPayload.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
-            ServerScanManager.getInstance().stopJob(player, payload.jobId(), payload.cause());
+            if(player.getPermissionLevel() >= 2){
+                ServerScanManager.getInstance().stopOPJob(payload.jobId());
+            }else {
+                ServerScanManager.getInstance().stopJob(player, payload.jobId(), payload.cause());
+            }
 
             //new
             ServerPlayNetworking.send(player, new ScanListResponsePayload(ServerScanManager.getInstance().getJobs()));
@@ -58,7 +59,7 @@ public class ServerNetwork {
             ServerPlayNetworking.send(player, new ScanListResponsePayload(ServerScanManager.getInstance().getJobs()));
         });
 
-        ServerPlayNetworking.registerGlobalReceiver(ScanJoinPayload.ID, (payload, context) -> {
+        ServerPlayNetworking.registerGlobalReceiver(ScanSubscribePayload.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
             String reason = ServerScanManager.getInstance().subscribe(player, payload.jobId());
             if (reason != null) {
@@ -72,6 +73,12 @@ public class ServerNetwork {
             }
             long totalChunks = info.totalChunks();
             ServerPlayNetworking.send(player, new ScanAcceptedPayload(payload.jobId(), totalChunks));
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(ScanUnsubscribePayload.ID, (payload, context) -> {
+            ServerPlayerEntity player = context.player();
+            ServerScanManager.getInstance().unsubscribe(player, payload.jobId());
+            ServerPlayNetworking.send(player, new ScanFullCompletedPayload(payload.jobId(), "Unsubscribed", false));
         });
     }
 

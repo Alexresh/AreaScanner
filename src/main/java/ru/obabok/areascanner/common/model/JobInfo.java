@@ -3,10 +3,13 @@ package ru.obabok.areascanner.common.model;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.util.math.BlockBox;
 
+import java.util.UUID;
+
 public record JobInfo(
         long id,
         String name,
         String owner,
+        UUID ownerUUID,
         String dimension,
         BlockBox range,
         String whitelistName,
@@ -19,6 +22,7 @@ public record JobInfo(
         long id = buf.readLong();
         String name = buf.readString();
         String owner = buf.readString();
+        UUID ownerUUID = buf.readUuid();
         String dimension = buf.readString();
         BlockBox range = readBlockBox(buf);
         String whitelistName = buf.readString();
@@ -26,13 +30,14 @@ public record JobInfo(
         long processedChunks = buf.readLong();
         int selectedBlocks = buf.readInt();
         boolean completeScan = buf.readBoolean();
-        return new JobInfo(id, name, owner, dimension, range, whitelistName, totalChunks, processedChunks, selectedBlocks, completeScan);
+        return new JobInfo(id, name, owner, ownerUUID, dimension, range, whitelistName, totalChunks, processedChunks, selectedBlocks, completeScan);
     }
 
     public void write(RegistryByteBuf buf) {
         buf.writeLong(id);
         buf.writeString(name == null ? "" : name);
         buf.writeString(owner == null ? "" : owner);
+        buf.writeUuid(ownerUUID);
         buf.writeString(dimension == null ? "" : dimension);
         writeBlockBox(buf, range);
         buf.writeString(whitelistName == null ? "" : whitelistName);

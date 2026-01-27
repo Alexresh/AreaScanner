@@ -35,7 +35,15 @@ public class ServerScanManager {
             job.stop(cause, true);
             jobs.remove(player.getUuid());
         }
+    }
 
+    public void stopOPJob(long jobId){
+        jobs.forEach((uuid, scanJob) -> {
+            if(scanJob.getJobId() == jobId){
+                scanJob.stop("The Admin said so", true);
+                jobs.remove(scanJob.getOwner().getUuid());
+            }
+        });
     }
 
     public void onBlockStateChange(ServerWorld world, BlockPos pos, BlockState oldState, BlockState newState){
@@ -73,6 +81,14 @@ public class ServerScanManager {
             }
         });
         return subscribed.get() ? null : "wrong job id";
+    }
+
+    public void unsubscribe(ServerPlayerEntity player, long jobId){
+        jobs.forEach((uuid, scanJob) -> {
+            if(scanJob.getJobId() == jobId){
+                scanJob.unsubscribe(player);
+            }
+        });
     }
 
     public void tick() {

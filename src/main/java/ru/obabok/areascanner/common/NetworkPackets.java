@@ -25,8 +25,9 @@ public class NetworkPackets {
         PayloadTypeRegistry.playC2S().register(ClientVersionPayload.ID, ClientVersionPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(ScanStartPayload.ID, ScanStartPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(ScanStopPayload.ID, ScanStopPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ScanUnsubscribePayload.ID, ScanUnsubscribePayload.CODEC);
         //PayloadTypeRegistry.playC2S().register(ScanDeletePayload.ID, ScanDeletePayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(ScanJoinPayload.ID, ScanJoinPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ScanSubscribePayload.ID, ScanSubscribePayload.CODEC);
         PayloadTypeRegistry.playC2S().register(ScanListRequestPayload.ID, ScanListRequestPayload.CODEC);
 
 

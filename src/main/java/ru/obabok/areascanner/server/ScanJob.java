@@ -105,7 +105,7 @@ public final class ScanJob{
         }
 
         if (scanCompleted) {
-            sendCompletedDeltaPackets();
+            sendDeltaDataPackets();
             if(selectedBlocks.isEmpty()){
                 stop("no blocks found!", false);
             }
@@ -116,15 +116,18 @@ public final class ScanJob{
         return jobId;
     }
 
+    public ServerPlayerEntity getOwner(){
+        return owner;
+    }
+
     public JobInfo getInfo(){
-        return new JobInfo(jobId, sharedName, owner.getName().getString(), world.getRegistryKey().getValue().getPath(), range, whitelistName, totalChunks, processedChunks, selectedBlocks.size(), scanCompleted);
+        return new JobInfo(jobId, sharedName, owner.getName().getString(), owner.getUuid(), world.getRegistryKey().getValue().getPath(), range, whitelistName, totalChunks, processedChunks, selectedBlocks.size(), scanCompleted);
     }
 
     private void sendPendingPackets() {
         while (!pendingPackets.isEmpty()) {
             PendingPacket packet = pendingPackets.poll();
             if (packet != null) {
-
                 SendQueue.addPacket(owner, new ScanChunkDataPayload(jobId, packet.positions));
             }
         }
@@ -144,11 +147,15 @@ public final class ScanJob{
         }
     }
 
+    public void unsubscribe(ServerPlayerEntity playerEntity){
+        subscribers.remove(playerEntity);
+    }
+
     public boolean canSubscribe(){
         return scanCompleted;
     }
 
-    private void sendCompletedDeltaPackets() {
+    private void sendDeltaDataPackets() {
         while (!pendingDeltas.isEmpty()) {
             DeltaUpdate first = pendingDeltas.poll();
             if (first == null) {

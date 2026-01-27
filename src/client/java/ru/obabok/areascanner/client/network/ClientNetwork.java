@@ -46,7 +46,7 @@ public class ClientNetwork {
                 ClientPlayNetworking.send(new ClientVersionPayload(MinecraftClient.getInstance().player.getUuid()));
                 if(FabricLoader.getInstance().getModContainer(References.MOD_ID).isPresent()){
                     if(!FabricLoader.getInstance().getModContainer(References.MOD_ID).get().getMetadata().getVersion().getFriendlyString().equals(payload.version())){
-                        MinecraftClient.getInstance().player.sendMessage(Text.literal("[" + References.MOD_ID + "] server version is: " + payload.version() + " but you in " + FabricLoader.getInstance().getModContainer(References.MOD_ID).get().getMetadata().getVersion().getFriendlyString()), false);
+                        MinecraftClient.getInstance().player.sendMessage(Text.literal("[" + References.MOD_ID + "] server version is: " + payload.version() + " but you in " + FabricLoader.getInstance().getModContainer(References.MOD_ID).get().getMetadata().getVersion().getFriendlyString() + ". Operation is not guaranteed"), false);
                     }
                 }
             }
@@ -68,7 +68,6 @@ public class ClientNetwork {
             }
             activeJobId = payload.jobId();
             Scan.startRemoteScan(pending.range, pending.whitelistName, payload.totalChunks());
-
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ScanRejectedPayload.ID, (payload, context) -> {
@@ -85,6 +84,7 @@ public class ClientNetwork {
 
         ClientPlayNetworking.registerGlobalReceiver(ScanFullCompletedPayload.ID, (payload, context) -> {
             if (payload.jobId() != activeJobId) return;
+            activeJobId = 0;
             if(payload.restart()){
                 BlockBox range = Scan.getRange();
                 Scan.stopScan();
@@ -140,6 +140,10 @@ public class ClientNetwork {
         activeJobId = 0;
     }
 
+    public static long getActiveJobId(){
+        return activeJobId;
+    }
+
     public static void requestSharedList() {
         if (!ClientPlayNetworking.canSend(ScanListRequestPayload.ID)) {
             clearList();
@@ -148,14 +152,14 @@ public class ClientNetwork {
         ClientPlayNetworking.send(new ScanListRequestPayload());
     }
 
-    public static void joinScan(JobInfo info) {
-        if (!ClientPlayNetworking.canSend(ScanJoinPayload.ID)) {
+    public static void subscribeToScan(JobInfo info) {
+        if (!ClientPlayNetworking.canSend(ScanSubscribePayload.ID)) {
             return;
         }
         BlockBox range = info.range();
         String whitelistName = info.whitelistName();
         pendingStarts.put(info.id(), new PendingStart(range, whitelistName));
-        ClientPlayNetworking.send(new ScanJoinPayload(info.id()));
+        ClientPlayNetworking.send(new ScanSubscribePayload(info.id()));
     }
 
     public static void deleteScan(long jobId) {
@@ -172,6 +176,13 @@ public class ClientNetwork {
     public static boolean canUseServerScan() {
         return ClientPlayNetworking.canSend(ScanStartPayload.ID);
     }
+
+    public static void unsubscribeFromScan(long jobId) {
+        if(ClientPlayNetworking.canSend(ScanUnsubscribePayload.ID)){
+            ClientPlayNetworking.send(new ScanUnsubscribePayload(jobId));
+        }
+    }
+
     private record PendingStart(BlockBox range, String whitelistName) {
     }
 }

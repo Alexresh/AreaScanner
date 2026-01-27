@@ -33,7 +33,7 @@ public class SharedScansScreen extends Screen {
 
         addDrawableChild(ButtonWidget.builder(Text.literal("Refresh"), btn -> {
             refresh();
-        }).dimensions(width - 90, 10, 70, 20).build());
+        }).dimensions(width - 90, 10, 60, 20).build());
     }
 
     public void drawJobs(){
@@ -43,8 +43,6 @@ public class SharedScansScreen extends Screen {
         int from = currentPage * ENTRIES_PER_PAGE;
         int to = Math.min(from + ENTRIES_PER_PAGE, scans.size());
         List<JobInfo> page = scans.subList(from, to);
-
-
 
         if (scans.isEmpty()) {
             addDrawableChild(new TextWidget(width / 2 - 60, 40, 120, 20,
@@ -59,8 +57,10 @@ public class SharedScansScreen extends Screen {
             String owner = info.owner() == null ? "unknown" : info.owner();
             String progress = "Chunks: " + info.processedChunks() + "/" + info.totalChunks() + " Blocks: " + info.selectedBlocks();
             addDrawableChild(new TextWidget(60, y, width - 120, 12,
-                    Text.literal(info.completedScan() ? "✓" : "⏳").formatted(info.completedScan() ? Formatting.GREEN : Formatting.YELLOW).append(Text.literal(title + " (" + owner + ") " + progress)), textRenderer));
-
+                    Text.literal(info.completedScan() ? "✓" : "⏳").formatted(info.completedScan() ? Formatting.GREEN : Formatting.YELLOW)
+                            .append(Text.literal(title).formatted(Formatting.WHITE))
+                            .append(Text.literal(" (" + owner + ") ").formatted(info.ownerUUID().equals(client.player.getUuid()) ? Formatting.GOLD : Formatting.WHITE))
+                            .append(Text.literal(progress).formatted(Formatting.WHITE)), textRenderer));
             String dimension = info.dimension() == null ? "unknown" : info.dimension();
             String whitelistName = info.whitelistName() == null ? "_" : info.whitelistName();
             String details = "name: " + whitelistName + " dim: " + dimension
@@ -69,21 +69,30 @@ public class SharedScansScreen extends Screen {
                     Text.literal(details).formatted(Formatting.GRAY), textRenderer));
 
             ButtonWidget joinBtn = ButtonWidget.builder(
-                            Text.literal(info.completedScan() ? "Join" : "Busy"),
-                            btn -> ClientNetwork.joinScan(info))
+                            Text.literal(info.completedScan() ? "Subscribe" : "Busy"),
+                            btn -> {
+                                ClientNetwork.subscribeToScan(info);
+                                refresh();
+                            })
                     .dimensions(width - 90, y, 60, 20).build();
+            if(info.id() == ClientNetwork.getActiveJobId()){
+                addDrawableChild(ButtonWidget.builder(Text.literal("Unsubscribe"),button -> {
+                    ClientNetwork.unsubscribeFromScan(info.id());
+                    refresh();
+                }).dimensions(width - 175, y, 80, 20).build());
+            }
             joinBtn.active = info.completedScan();
             addDrawableChild(joinBtn);
 
-            addDrawableChild(ButtonWidget.builder(Text.literal("X"), btn -> {
-                ClientNetwork.deleteScan(info.id());
-                ClientNetwork.openSharedScansScreen(parent);
-            }).dimensions(width - 25, y, 20, 20).build());
+            if(info.ownerUUID().equals(client.player.getUuid()) || client.player.getPermissionLevel() >= 2){
+                addDrawableChild(ButtonWidget.builder(Text.literal("X"), btn -> {
+                    ClientNetwork.deleteScan(info.id());
+                    refresh();
+                }).dimensions(width - 25, y, 20, 20).build());
+            }
 
             y += rowHeight;
         }
-
-
 
         int buttonY = height - 60;
         if (currentPage > 0) {
