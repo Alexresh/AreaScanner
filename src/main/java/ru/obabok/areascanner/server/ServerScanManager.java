@@ -1,5 +1,6 @@
 package ru.obabok.areascanner.server;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -58,6 +59,16 @@ public class ServerScanManager {
             jobInfos.add(scanJob.getInfo());
         });
         return jobInfos;
+    }
+
+    public Map<Block, Integer> getMaterialList(long jobId){
+        AtomicReference<Map<Block, Integer>> materials = new AtomicReference<>();
+        jobs.forEach((uuid, scanJob) -> {
+            if(scanJob.getJobId() == jobId){
+                materials.set(scanJob.getMaterialList());
+            }
+        });
+        return materials.get();
     }
 
     public JobInfo getJobInfo(long jobId){

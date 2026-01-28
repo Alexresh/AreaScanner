@@ -1,4 +1,4 @@
-package ru.obabok.areascanner.client.gui;
+package ru.obabok.areascanner.client.gui.screens;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -15,6 +15,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.math.BlockBox;
 import ru.obabok.areascanner.client.Scan;
+import ru.obabok.areascanner.client.gui.widgets.ToggelableWidgedDropDownList;
 import ru.obabok.areascanner.client.models.ScreenPlus;
 import ru.obabok.areascanner.client.network.ClientNetwork;
 

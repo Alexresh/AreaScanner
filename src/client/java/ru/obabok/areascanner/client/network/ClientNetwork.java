@@ -8,7 +8,8 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockBox;
 import ru.obabok.areascanner.client.Scan;
-import ru.obabok.areascanner.client.gui.SharedScansScreen;
+import ru.obabok.areascanner.client.gui.screens.MaterialListScreen;
+import ru.obabok.areascanner.client.gui.screens.SharedScansScreen;
 import ru.obabok.areascanner.client.util.WhitelistManager;
 import ru.obabok.areascanner.common.NetworkPackets;
 import ru.obabok.areascanner.common.References;
@@ -120,6 +121,16 @@ public class ClientNetwork {
             debugServerPacketsQueue = payload.networkQueueSize();
         });
 
+        ClientPlayNetworking.registerGlobalReceiver(MaterialListResponsePayload.ID, (payload, context) -> {
+            if(payload.jobId() != MaterialListScreen.jobId) return;
+            MaterialListScreen.clear();
+            MaterialListScreen.updateList(payload.materials());
+        });
+
+    }
+
+    public static void requestMaterialList(long jobId){
+        ClientPlayNetworking.send(new MaterialListRequestPayload(jobId));
     }
 
     public static void openSharedScansScreen(Screen parent){

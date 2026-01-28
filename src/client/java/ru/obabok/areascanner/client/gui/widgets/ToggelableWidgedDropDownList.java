@@ -1,4 +1,4 @@
-package ru.obabok.areascanner.client.gui;
+package ru.obabok.areascanner.client.gui.widgets;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import fi.dy.masa.malilib.gui.MaLiLibIcons;

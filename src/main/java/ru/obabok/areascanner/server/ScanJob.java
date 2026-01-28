@@ -1,6 +1,8 @@
 package ru.obabok.areascanner.server;
 
 import it.unimi.dsi.fastutil.longs.*;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -45,6 +47,7 @@ public final class ScanJob{
     public HashSet<BlockPos> selectedBlocks = new HashSet<>();
     private final String sharedName;
     private final String whitelistName;
+    private final Object2IntOpenHashMap<Block> materialList = new Object2IntOpenHashMap<>();
 
     private NbtScannable scannableIOWorker;
 
@@ -272,7 +275,7 @@ public final class ScanJob{
         boolean oldMatch = BlockMatcher.matches(whitelist, oldState, world, pos);
         boolean newMatch = BlockMatcher.matches(whitelist, newState, world, pos);
         if (oldMatch == newMatch) return;
-        queueDelta(pos, newMatch);
+        queueDelta(pos, newMatch, oldState, newState);
     }
 
     private static LongArrayList buildChunkList(BlockBox range) {
@@ -290,13 +293,20 @@ public final class ScanJob{
         return list;
     }
 
-    private void queueDelta(BlockPos pos, boolean add) {
+    private void queueDelta(BlockPos pos, boolean add, BlockState oldState, BlockState newState) {
         if(add){
             selectedBlocks.add(pos);
+            materialList.addTo(newState.getBlock(), 1);
         }else {
             selectedBlocks.remove(pos);
+            materialList.addTo(oldState.getBlock(), -1);
         }
         pendingDeltas.add(new DeltaUpdate(add, pos.toImmutable()));
+    }
+
+
+    public Object2IntOpenHashMap<Block> getMaterialList(){
+        return materialList;
     }
 
     private boolean isInRange(BlockPos pos) {
@@ -338,6 +348,7 @@ public final class ScanJob{
                     pos.set(x, y, z);
                     if (BlockMatcher.matches(whitelist, chunk.getBlockState(pos), world, pos)) {
                         matches.add(pos.toImmutable());
+                        materialList.addTo(chunk.getBlockState(pos).getBlock(), 1);
                     }
                 }
             }

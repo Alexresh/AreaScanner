@@ -1,4 +1,4 @@
-package ru.obabok.areascanner.client.gui;
+package ru.obabok.areascanner.client.gui.screens;
 
 import net.minecraft.block.Blocks;
 import net.minecraft.client.gui.DrawContext;
@@ -12,6 +12,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import ru.obabok.areascanner.client.Scan;
+import ru.obabok.areascanner.client.gui.widgets.ToggelableWidgedDropDownList;
 import ru.obabok.areascanner.client.models.ScreenPlus;
 import ru.obabok.areascanner.common.BlockMatcher;
 import ru.obabok.areascanner.common.model.Whitelist;

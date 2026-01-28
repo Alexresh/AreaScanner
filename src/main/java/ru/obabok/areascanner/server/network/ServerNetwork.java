@@ -81,6 +81,12 @@ public class ServerNetwork {
             ServerScanManager.getInstance().unsubscribe(player, payload.jobId());
             ServerPlayNetworking.send(player, new ScanFullCompletedPayload(payload.jobId(), "Unsubscribed", false));
         });
+
+        ServerPlayNetworking.registerGlobalReceiver(MaterialListRequestPayload.ID, (payload, context) -> {
+            ServerPlayerEntity player = context.player();
+            ServerScanManager.getInstance().getMaterialList(payload.jobId());
+            ServerPlayNetworking.send(player, new MaterialListResponsePayload(payload.jobId(), ServerScanManager.getInstance().getMaterialList(payload.jobId())));
+        });
     }
 
     private static void handleStart(ServerPlayerEntity player, ScanStartPayload payload) {

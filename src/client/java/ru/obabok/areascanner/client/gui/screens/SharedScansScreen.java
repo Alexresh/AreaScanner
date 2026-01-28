@@ -1,4 +1,4 @@
-package ru.obabok.areascanner.client.gui;
+package ru.obabok.areascanner.client.gui.screens;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -69,21 +69,27 @@ public class SharedScansScreen extends Screen {
             addDrawableChild(new TextWidget(60, y + 12, width - 120, 12,
                     Text.literal(details).formatted(Formatting.GRAY), textRenderer));
 
-            ButtonWidget joinBtn = ButtonWidget.builder(
+            if(info.id() == ClientNetwork.getActiveJobId()){
+                addDrawableChild(ButtonWidget.builder(Text.literal("Unsubscribe"),button -> {
+                    ClientNetwork.unsubscribeFromScan(info.id());
+                    refresh();
+                }).dimensions(width - 190, y, 70, 20).build());
+            }
+
+            ButtonWidget subscribeBtn = ButtonWidget.builder(
                             Text.literal(info.completedScan() ? "Subscribe" : "Busy"),
                             btn -> {
                                 ClientNetwork.subscribeToScan(info);
                                 refresh();
                             })
-                    .dimensions(width - 90, y, 60, 20).build();
-            if(info.id() == ClientNetwork.getActiveJobId()){
-                addDrawableChild(ButtonWidget.builder(Text.literal("Unsubscribe"),button -> {
-                    ClientNetwork.unsubscribeFromScan(info.id());
-                    refresh();
-                }).dimensions(width - 175, y, 80, 20).build());
-            }
-            joinBtn.active = info.completedScan();
-            addDrawableChild(joinBtn);
+                    .dimensions(width - 115, y, 60, 20).build();
+
+            subscribeBtn.active = info.completedScan();
+            addDrawableChild(subscribeBtn);
+
+            addDrawableChild(new ButtonWidget.Builder(Text.literal("[M]"), button -> {
+                client.setScreen(new MaterialListScreen(this, info.id()));
+            }).dimensions(width - 50, y, 20, 20).build());
 
             if(info.ownerUUID().equals(client.player.getUuid()) || client.player.getPermissionLevel() >= 2){
                 addDrawableChild(ButtonWidget.builder(Text.literal("X"), btn -> {

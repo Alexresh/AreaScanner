@@ -9,6 +9,7 @@ import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
+import ru.obabok.areascanner.client.gui.screens.MaterialListScreen;
 import ru.obabok.areascanner.client.models.ScanState;
 import ru.obabok.areascanner.common.BlockMatcher;
 import ru.obabok.areascanner.common.model.Whitelist;
@@ -88,6 +89,7 @@ public class Scan {
         ChunkScheduler.clearQueue();
         RenderUtil.clearRender();
         processing = false;
+        MaterialListScreen.clear();
     }
 
     public static void setRange(BlockBox _range){
@@ -187,6 +189,7 @@ public class Scan {
             if (blockPos.getX() >> 4 == chunkPos.x && blockPos.getZ() >> 4 == chunkPos.z) {
                 if(!BlockMatcher.matches(whitelist, world.getBlockState(blockPos), world, blockPos)){
                     iterator.remove();
+                    MaterialListScreen.addBlock(world.getBlockState(blockPos).getBlock(), -1);
                 }
             }
         }
@@ -211,6 +214,7 @@ public class Scan {
                 blockPos.getZ() <= range.getMaxZ() && blockPos.getZ() >= range.getMinZ()){
             if(BlockMatcher.matches(whitelist, blockState, world, blockPos)){
                 selectedBlocks.add(blockPos);
+                MaterialListScreen.addBlock(blockState.getBlock(), 1);
             }
         }
         checkProcessing();

@@ -1,4 +1,4 @@
-package ru.obabok.areascanner.client.gui;
+package ru.obabok.areascanner.client.gui.screens;
 
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
@@ -37,6 +37,7 @@ public class ConfigGui extends GuiConfigsBase {
         }
         ButtonGeneric testBtn = new ButtonGeneric(width - 75, getScreenHeight() - 30, 65, 20, "Test");
         this.addButton(testBtn, (btn, mousebtn)->{
+            //client.setScreen(new MaterialListScreen(this, 0));
             client.player.playSound(SoundEvents.AMBIENT_CAVE.value());
             close();
         });
