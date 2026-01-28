@@ -104,6 +104,12 @@ public final class ScanJob{
             if (processedChunks >= totalChunks && pendingNbt.isEmpty() && readyChunks.isEmpty() && pendingPackets.isEmpty()) {
                 SendQueue.addPacket(owner, new ScanCompletePayload(jobId));
                 scanCompleted = true;
+
+                chunks.clear();
+                chunks.trim();
+
+                readyChunks.clear();
+                readyChunks.trim();
             }
         }
 
