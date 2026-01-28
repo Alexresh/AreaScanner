@@ -32,6 +32,7 @@ public class ClientNetwork {
     private static final Map<Long, PendingStart> pendingStarts = new HashMap<>();
     private static boolean requested;
     private static SharedScansScreen sharedScansScreen;
+    private static int debugServerPacketsQueue;
 
     public static void register(){
 
@@ -47,18 +48,18 @@ public class ClientNetwork {
                 if(FabricLoader.getInstance().getModContainer(References.MOD_ID).isPresent()){
                     if(!FabricLoader.getInstance().getModContainer(References.MOD_ID).get().getMetadata().getVersion().getFriendlyString().equals(payload.version())){
                         MinecraftClient.getInstance().player.sendMessage(Text.literal("[" + References.MOD_ID + "] server version is: " + payload.version() + " but you in " + FabricLoader.getInstance().getModContainer(References.MOD_ID).get().getMetadata().getVersion().getFriendlyString() + ". Operation is not guaranteed"), false);
+                    }else {
+                        MinecraftClient.getInstance().player.sendMessage(Text.literal("[" + References.MOD_ID + "] Server-side scanning is supported"), false);
                     }
                 }
             }
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ScanListResponsePayload.ID, (payload, context) -> {
-            context.client().execute(() -> {
-                jobList = List.copyOf(payload.scans());
-                if(sharedScansScreen != null){
-                    sharedScansScreen.drawJobs();
-                }
-            });
+            jobList = payload.scans();
+            if(sharedScansScreen != null){
+                sharedScansScreen.drawJobs();
+            }
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ScanAcceptedPayload.ID, (payload, context) -> {
@@ -114,11 +115,20 @@ public class ClientNetwork {
                 MinecraftClient.getInstance().player.sendMessage(Text.literal("Server scan finished"), false);
             }
         });
+
+        ClientPlayNetworking.registerGlobalReceiver(DebugInfoPayload.ID, (payload, context) -> {
+            debugServerPacketsQueue = payload.networkQueueSize();
+        });
+
     }
 
     public static void openSharedScansScreen(Screen parent){
         sharedScansScreen = new SharedScansScreen(0, parent);
         openGui(sharedScansScreen);
+    }
+
+    public static int getDebugServerPacketsQueue(){
+        return debugServerPacketsQueue;
     }
 
     public static boolean requestScan(BlockBox range, String whitelistName, String shareName) {

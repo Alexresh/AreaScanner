@@ -57,6 +57,7 @@ public class ServerNetwork {
         ServerPlayNetworking.registerGlobalReceiver(ScanListRequestPayload.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
             ServerPlayNetworking.send(player, new ScanListResponsePayload(ServerScanManager.getInstance().getJobs()));
+            ServerPlayNetworking.send(player, new DebugInfoPayload(SendQueue.getQueueSize()));
         });
 
         ServerPlayNetworking.registerGlobalReceiver(ScanSubscribePayload.ID, (payload, context) -> {

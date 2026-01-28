@@ -25,5 +25,9 @@ public class SendQueue {
         }
     }
 
+    public static int getQueueSize(){
+        return queue.size();
+    }
+
     private record Packet(ServerPlayerEntity player, CustomPayload payload){}
 }

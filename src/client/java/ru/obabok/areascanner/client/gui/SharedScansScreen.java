@@ -7,6 +7,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.text.Text;
+import net.minecraft.util.Colors;
 import net.minecraft.util.Formatting;
 import ru.obabok.areascanner.client.network.ClientNetwork;
 import ru.obabok.areascanner.common.model.JobInfo;
@@ -135,6 +136,7 @@ public class SharedScansScreen extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 10, 0xFFFFFF);
+        context.drawText(textRenderer, "Server packets queue: " + ClientNetwork.getDebugServerPacketsQueue(), 10, 10, Colors.WHITE, false);
         super.render(context, mouseX, mouseY, delta);
     }
 
