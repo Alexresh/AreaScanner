@@ -131,21 +131,34 @@ public class Scan {
         }
     }
 
-    public static void applyRemoteChunkData(List<BlockPos> positions) {
+    public static void applyRemoteChunkData(long[] positions) {
         if (!remoteProcessing) return;
-        if (positions == null || positions.isEmpty()) return;
-        selectedBlocks.addAll(positions);
+        if (positions == null || positions.length == 0) return;
+        for (int i = 0; i < positions.length; i++) {
+            addPositions(positions);
+        }
+        //selectedBlocks.addAll(BlockPos.fromLong(positions));
     }
 
-    public static void applyRemoteDelta(List<BlockPos> positions, boolean add) {
-        if (!remoteProcessing) return;
-        if (positions == null || positions.isEmpty()) return;
-        if (add) {
-            selectedBlocks.addAll(positions);
-            return;
+    private static void addPositions(long[] positions){
+        for (int i = 0; i < positions.length; i++) {
+            selectedBlocks.add(BlockPos.fromLong(positions[i]));
         }
-        for (BlockPos pos : positions) {
-            selectedBlocks.remove(pos);
+    }
+
+    private static void removePositions(long[] positions){
+        for (int i = 0; i < positions.length; i++) {
+            selectedBlocks.remove(BlockPos.fromLong(positions[i]));
+        }
+    }
+
+    public static void applyRemoteDelta(long[] positions, boolean add) {
+        if (!remoteProcessing) return;
+        if (positions == null || positions.length == 0) return;
+        if (add) {
+            addPositions(positions);
+        }else{
+            removePositions(positions);
         }
     }
 

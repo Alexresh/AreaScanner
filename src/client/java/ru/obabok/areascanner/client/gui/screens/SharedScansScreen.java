@@ -84,7 +84,7 @@ public class SharedScansScreen extends Screen {
                             })
                     .dimensions(width - 115, y, 60, 20).build();
 
-            subscribeBtn.active = info.completedScan();
+            subscribeBtn.active = info.completedScan() && ClientNetwork.getDebugServerPacketsQueue() <= 100;
             addDrawableChild(subscribeBtn);
 
             addDrawableChild(new ButtonWidget.Builder(Text.literal("[M]"), button -> {

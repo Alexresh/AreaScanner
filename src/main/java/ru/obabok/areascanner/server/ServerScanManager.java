@@ -9,104 +9,115 @@ import net.minecraft.util.math.BlockPos;
 import ru.obabok.areascanner.common.model.JobInfo;
 import ru.obabok.areascanner.common.model.Whitelist;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.*;
 
 public class ServerScanManager {
     private static final ServerScanManager INSTANCE = new ServerScanManager();
-    private final Map<UUID, ScanJob> jobs = new ConcurrentHashMap<>();
-
+    private final ArrayList<ScanJob> jobs = new ArrayList<>();
     public static ServerScanManager getInstance() {
         return INSTANCE;
     }
 
     public void startJob(ServerPlayerEntity player, long jobId, BlockBox range, String whitelistName, Whitelist whitelist, String sharedName) {
-        jobs.remove(player.getUuid());
-        ScanJob job = new ScanJob(player, jobId, range, whitelist, sharedName, whitelistName);
-        jobs.put(player.getUuid(), job);
+        for (int i = 0; i < jobs.size(); i++) {
+            if(jobs.get(i).getOwner().getUuid().equals(player.getUuid())){
+                deleteJob(i);
+            }
+        }
+        jobs.add(new ScanJob(player, jobId, range, whitelist, sharedName, whitelistName));
     }
 
     public void stopJob(ServerPlayerEntity player, long jobId, String cause){
-        ScanJob job = jobs.get(player.getUuid());
-        if(job != null && job.getJobId() == jobId){
-            job.stop(cause, true);
-            jobs.remove(player.getUuid());
+        for (int i = 0; i < jobs.size(); i++) {
+            ScanJob job = jobs.get(i);
+
+            if (job.getOwner().getUuid().equals(player.getUuid()) && job.getJobId() == jobId) {
+                job.stop(cause, true);
+                deleteJob(i);
+                return;
+            }
         }
     }
 
     public void stopOPJob(long jobId){
-        jobs.forEach((uuid, scanJob) -> {
-            if(scanJob.getJobId() == jobId){
-                scanJob.stop("The Admin said so", true);
-                jobs.remove(scanJob.getOwner().getUuid());
+        for (int i = 0; i < jobs.size(); i++) {
+            ScanJob job = jobs.get(i);
+            if (job.getJobId() == jobId) {
+                job.stop("The Admin said so", true);
+                deleteJob(i);
+                return;
             }
-        });
+        }
     }
 
     public void onBlockStateChange(ServerWorld world, BlockPos pos, BlockState oldState, BlockState newState){
-        jobs.forEach((uuid, scanJob) -> {
-            scanJob.onBlockStateChange(world, pos, oldState, newState);
-        });
+        for (int i = 0; i < jobs.size(); i++) {
+            jobs.get(i).onBlockStateChange(world, pos, oldState, newState);
+        }
     }
 
     public ArrayList<JobInfo> getJobs(){
-        ArrayList<JobInfo> jobInfos = new ArrayList<>();
-        jobs.forEach((uuid, scanJob) -> {
-            jobInfos.add(scanJob.getInfo());
-        });
+        ArrayList<JobInfo> jobInfos = new ArrayList<>(jobs.size());
+        for (int i = 0; i < jobs.size(); i++) {
+            jobInfos.add(jobs.get(i).getInfo());
+        }
         return jobInfos;
     }
 
     public Map<Block, Integer> getMaterialList(long jobId){
-        AtomicReference<Map<Block, Integer>> materials = new AtomicReference<>();
-        jobs.forEach((uuid, scanJob) -> {
-            if(scanJob.getJobId() == jobId){
-                materials.set(scanJob.getMaterialList());
+        for (int i = 0; i < jobs.size(); i++) {
+            if (jobs.get(i).getJobId() == jobId) {
+                return jobs.get(i).getMaterialList();
             }
-        });
-        return materials.get();
+        }
+        return null;
     }
 
     public JobInfo getJobInfo(long jobId){
-        AtomicReference<JobInfo> info = new AtomicReference<>();
-        jobs.forEach((uuid, scanJob) -> {
-            if(scanJob.getJobId() == jobId){
-                info.set(scanJob.getInfo());
+        for (int i = 0; i < jobs.size(); i++) {
+            if (jobs.get(i).getJobId() == jobId) {
+                return jobs.get(i).getInfo();
             }
-        });
-        return info.get();
+        }
+        return null;
     }
 
     public String subscribe(ServerPlayerEntity player, long jobId){
-        AtomicBoolean subscribed = new AtomicBoolean(false);
-        jobs.forEach((uuid, scanJob) -> {
-            if(scanJob.getJobId() == jobId){
-                if(scanJob.canSubscribe()){
-                    scanJob.subscribe(player);
-                    subscribed.set(true);
+        for (int i = 0; i < jobs.size(); i++) {
+            ScanJob job = jobs.get(i);
+            if (job.getJobId() == jobId) {
+                if (job.canSubscribe()) {
+                    job.subscribe(player);
+                    return null; // Успех
                 }
             }
-        });
-        return subscribed.get() ? null : "wrong job id";
+        }
+        return "wrong job id";
+
     }
 
     public void unsubscribe(ServerPlayerEntity player, long jobId){
-        jobs.forEach((uuid, scanJob) -> {
-            if(scanJob.getJobId() == jobId){
-                scanJob.unsubscribe(player);
+        for (int i = 0; i < jobs.size(); i++) {
+            if (jobs.get(i).getJobId() == jobId) {
+                jobs.get(i).unsubscribe(player);
+                return;
             }
-        });
+        }
+    }
+
+    private void deleteJob(int id){
+        jobs.set(id, jobs.get(jobs.size() - 1));
+        jobs.remove(jobs.size() - 1);
     }
 
     public void tick() {
-        if (jobs.isEmpty()) return;
-        for (ScanJob job : jobs.values()) {
+        for (int i = jobs.size() - 1; i >= 0; i--) {
+            ScanJob job = jobs.get(i);
             job.tick();
+
+            if (job.isFullComplete()) {
+                deleteJob(i);
+            }
         }
-        jobs.values().removeIf(ScanJob::isComplete);
     }
 }

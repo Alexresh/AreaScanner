@@ -45,7 +45,6 @@ public class ClientNetwork {
 
         ClientPlayNetworking.registerGlobalReceiver(ServerVersionPayload.ID, (payload, context) -> {
             if(MinecraftClient.getInstance().player != null){
-                ClientPlayNetworking.send(new ClientVersionPayload(MinecraftClient.getInstance().player.getUuid()));
                 if(FabricLoader.getInstance().getModContainer(References.MOD_ID).isPresent()){
                     if(!FabricLoader.getInstance().getModContainer(References.MOD_ID).get().getMetadata().getVersion().getFriendlyString().equals(payload.version())){
                         MinecraftClient.getInstance().player.sendMessage(Text.literal("[" + References.MOD_ID + "] server version is: " + payload.version() + " but you in " + FabricLoader.getInstance().getModContainer(References.MOD_ID).get().getMetadata().getVersion().getFriendlyString() + ". Operation is not guaranteed"), false);

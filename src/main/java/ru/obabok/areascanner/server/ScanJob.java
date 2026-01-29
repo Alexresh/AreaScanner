@@ -1,5 +1,6 @@
 package ru.obabok.areascanner.server;
 
+import it.unimi.dsi.fastutil.ints.IntArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.*;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.block.Block;
@@ -33,7 +34,7 @@ public final class ScanJob{
     private final BlockBox range;
     private final Whitelist whitelist;
     private final ServerWorld world;
-    private final ArrayDeque<PendingPacket> pendingPackets;
+    private final LongArrayFIFOQueue pendingPacketData = new LongArrayFIFOQueue();
     private boolean scanCompleted;
     private int chunkIndex;
     private final LongArrayList chunks;
@@ -43,11 +44,14 @@ public final class ScanJob{
     private final long totalChunks;
     private final LongOpenHashSet scannedChunks;
     private boolean fullComplete;
-    private final ArrayDeque<DeltaUpdate> pendingDeltas;
-    public HashSet<BlockPos> selectedBlocks = new HashSet<>();
+    private final LongArrayFIFOQueue pendingDeltaPos = new LongArrayFIFOQueue();
+    private final IntArrayFIFOQueue pendingDeltaTypes = new IntArrayFIFOQueue();
+    public LongOpenHashSet selectedBlocks = new LongOpenHashSet();
     private final String sharedName;
     private final String whitelistName;
     private final Object2IntOpenHashMap<Block> materialList = new Object2IntOpenHashMap<>();
+    private final LongArrayList deltaBuffer = new LongArrayList();
+    private final LongArrayList activeNbtReads = new LongArrayList();
 
     private NbtScannable scannableIOWorker;
 
@@ -58,12 +62,12 @@ public final class ScanJob{
         this.sharedName = sharedName;
         this.whitelist = whitelist;
         this.world = player.getServerWorld();
-        this.pendingPackets = new ArrayDeque<>();
+        //this.pendingPackets = new ArrayDeque<>();
         this.chunks = buildChunkList(range);
         this.pendingNbt = new Long2ObjectOpenHashMap<>();
         this.readyChunks = new LongArrayFIFOQueue();
         this.scannedChunks = new LongOpenHashSet();
-        this.pendingDeltas = new ArrayDeque<>();
+        //this.pendingDeltas = new ArrayDeque<>();
         this.totalChunks = this.chunks.size();
         this.whitelistName = whitelistName;
         this.subscribers = new ArrayList<>();
@@ -71,19 +75,18 @@ public final class ScanJob{
     }
 
     public void tick(){
-        if (!scanCompleted && !owner.networkHandler.isConnectionOpen()) {
-            stop("changed world", false);
-            return;
-        }
-        if (!scanCompleted && owner.getServerWorld() != world) {
-            stop("changed world", false);
-            return;
+        if (!scanCompleted) {
+            if (!owner.networkHandler.isConnectionOpen() || owner.getServerWorld() != world) {
+                stop("cancelled/world change", false);
+                return;
+            }
         }
 
         long startNs = System.nanoTime();
         long budgetNs = ServerScanConfig.getBudgetMs() * 1_000_000L;
 
         sendPendingPackets();
+        sendDeltaDataPackets();
         if (timeExceeded(startNs, budgetNs)) {
             return;
         }
@@ -101,24 +104,35 @@ public final class ScanJob{
 
             scanReadyChunks(startNs, budgetNs);
 
-            if (processedChunks >= totalChunks && pendingNbt.isEmpty() && readyChunks.isEmpty() && pendingPackets.isEmpty()) {
+            if (processedChunks >= totalChunks && pendingNbt.isEmpty() && readyChunks.isEmpty() && pendingPacketData.isEmpty()) {
                 SendQueue.addPacket(owner, new ScanCompletePayload(jobId));
                 scanCompleted = true;
-
-                chunks.clear();
-                chunks.trim();
-
-                readyChunks.clear();
-                readyChunks.trim();
+                cleanup();
             }
         }
 
         if (scanCompleted) {
-            sendDeltaDataPackets();
             if(selectedBlocks.isEmpty()){
                 stop("no blocks found!", false);
             }
         }
+    }
+
+    private void cleanup(){
+        chunks.clear();
+        chunks.trim();
+        readyChunks.clear();
+        readyChunks.trim();
+        pendingNbt.clear();
+        pendingNbt.trim();
+        activeNbtReads.clear();
+        activeNbtReads.trim();
+        pendingPacketData.clear();
+        pendingPacketData.trim();
+        //new
+//        scannedChunks.clear();
+//        scannedChunks.trim();
+        deltaBuffer.clear();
     }
 
     public long getJobId(){
@@ -134,11 +148,15 @@ public final class ScanJob{
     }
 
     private void sendPendingPackets() {
-        while (!pendingPackets.isEmpty()) {
-            PendingPacket packet = pendingPackets.poll();
-            if (packet != null) {
-                SendQueue.addPacket(owner, new ScanChunkDataPayload(jobId, packet.positions));
+        while (!pendingPacketData.isEmpty()) {
+            int count = (int) pendingPacketData.dequeueLong();
+
+            deltaBuffer.clear();
+            for (int i = 0; i < count; i++) {
+                deltaBuffer.add(pendingPacketData.dequeueLong());
             }
+
+            SendQueue.addPacket(owner, new ScanChunkDataPayload(jobId, deltaBuffer.toLongArray()));
         }
     }
 
@@ -147,12 +165,12 @@ public final class ScanJob{
         subscribers.add(player);
         scannedChunks.forEach(scannedChunk -> SendQueue.addPacket(player, new ScanChunkSummaryPayload(jobId, new ChunkPos(scannedChunk))));
         SendQueue.addPacket(player, new ScanCompletePayload(jobId));
-        List<BlockPos> blockList = new ArrayList<>(selectedBlocks);
+        LongArrayList blockList = new LongArrayList(selectedBlocks);
         int max = ServerScanConfig.getMaxDeltaPositionsPerPacket();
         for (int i = 0; i < blockList.size(); i += max) {
             int end = Math.min(i + max, blockList.size());
-            List<BlockPos> batch = blockList.subList(i, end);
-            SendQueue.addPacket(player, new ScanDeltaPayload(jobId, true, new ArrayList<>(batch)));
+            LongList batch = blockList.subList(i, end);
+            SendQueue.addPacket(player, new ScanDeltaPayload(jobId, true, batch.toLongArray()));
         }
     }
 
@@ -165,47 +183,62 @@ public final class ScanJob{
     }
 
     private void sendDeltaDataPackets() {
-        while (!pendingDeltas.isEmpty()) {
-            DeltaUpdate first = pendingDeltas.poll();
-            if (first == null) {
-                break;
+        while (!pendingDeltaTypes.isEmpty()) {
+            // Берем первый тип и позицию
+            int currentType = pendingDeltaTypes.dequeueInt();
+            boolean isAdd = (currentType == 1);
+
+            deltaBuffer.clear();
+            deltaBuffer.add(pendingDeltaPos.dequeueLong());
+
+            // Собираем пачку, пока типы совпадают
+            while (!pendingDeltaTypes.isEmpty() && deltaBuffer.size() < ServerScanConfig.getMaxDeltaPositionsPerPacket()) {
+                // "Подсматриваем" тип следующего элемента
+                int nextType = pendingDeltaTypes.firstInt();
+                if (nextType != currentType) break;
+
+                // Если тип такой же, забираем его из обеих очередей
+                pendingDeltaTypes.dequeueInt();
+                deltaBuffer.add(pendingDeltaPos.dequeueLong());
             }
-            boolean add = first.add();
-            List<BlockPos> positions = new ArrayList<>();
-            positions.add(first.pos());
-            while (!pendingDeltas.isEmpty() && positions.size() < ServerScanConfig.getMaxDeltaPositionsPerPacket()) {
-                DeltaUpdate next = pendingDeltas.peek();
-                if (next == null || next.add() != add) {
-                    break;
-                }
-                positions.add(next.pos());
-                pendingDeltas.poll();
+
+            ScanDeltaPayload payload = new ScanDeltaPayload(jobId, isAdd, deltaBuffer.toLongArray());
+
+            for (int i = 0; i < subscribers.size(); i++) {
+                SendQueue.addPacket(subscribers.get(i), payload);
             }
-            subscribers.forEach(subscriber -> SendQueue.addPacket(subscriber, new ScanDeltaPayload(jobId, add, positions)));
         }
     }
 
     private void processCompletedNbtChecks() {
-        if (pendingNbt.isEmpty()) return;
+        if (activeNbtReads.isEmpty()) return;
+
         int completed = 0;
-        LongIterator it = pendingNbt.keySet().iterator();
-        while (it.hasNext() && completed < ServerScanConfig.getMaxNbtReadsPerTick()) {
-            long pos = it.nextLong();
+        // Идем по списку активных чтений с конца к началу (безопасное удаление)
+        for (int i = activeNbtReads.size() - 1; i >= 0; i--) {
+            if (completed >= ServerScanConfig.getMaxNbtReadsPerTick()) break;
+
+            long pos = activeNbtReads.getLong(i);
             CompletableFuture<Optional<NbtCompound>> future = pendingNbt.get(pos);
+
             if (future == null || !future.isDone()) continue;
-            Optional<NbtCompound> nbt;
+
             try {
-                nbt = future.getNow(Optional.empty());
+                Optional<NbtCompound> nbt = future.getNow(Optional.empty());
+
+                // Удаляем из мапы и из списка активных чтений
+                pendingNbt.remove(pos);
+                activeNbtReads.removeLong(i);
+                completed++;
+
+                if (nbt.isPresent()) {
+                    readyChunks.enqueue(pos);
+                } else {
+                    stop("Chunk " + new ChunkPos(pos) + " missing", true);
+                    return;
+                }
             } catch (Exception e) {
-                stop("Error Chunk NBT read failed for " + new ChunkPos(pos) + e, true);
-                return;
-            }
-            it.remove();
-            completed++;
-            if (nbt.isPresent()) {
-                readyChunks.enqueue(pos);
-            } else {
-                stop("Chunk " + new ChunkPos(pos) + " is not created! Cancelling", true);
+                stop("NBT Read Error", true);
                 return;
             }
         }
@@ -214,19 +247,20 @@ public final class ScanJob{
     private void scheduleNbtChecks() {
         if (chunkIndex >= chunks.size()) return;
         if (pendingNbt.size() >= ServerScanConfig.getMaxPendingNbt()) return;
+
         StorageIoWorker storage = getStorageIoWorker();
-        if (storage == null) {
-            owner.sendMessage(Text.literal((References.MOD_ID + " ScanJob->scheduleNbtChecks StorageIoWorker was null")));
-            stop("ScanJob->scheduleNbtChecks StorageIoWorker was null", true);
-            return;
-        }
+        if (storage == null) return;
+
         int scheduled = 0;
         while (chunkIndex < chunks.size()
                 && scheduled < ServerScanConfig.getMaxNbtReadsPerTick()
                 && pendingNbt.size() < ServerScanConfig.getMaxPendingNbt()) {
+
             long pos = chunks.getLong(chunkIndex++);
             CompletableFuture<Optional<NbtCompound>> future = storage.readChunkData(new ChunkPos(pos));
+
             pendingNbt.put(pos, future);
+            activeNbtReads.add(pos); // Запоминаем, что этот чанк в работе
             scheduled++;
         }
     }
@@ -245,14 +279,17 @@ public final class ScanJob{
                 stop("Chunk " + new ChunkPos(pos) + " is not world chunk! Cancelling", true);
                 return;
             }
-            List<BlockPos> matches = scanChunk(worldChunk, chunkPos);
-            selectedBlocks.addAll(matches);
+
+            scanChunk(worldChunk, chunkPos, deltaBuffer);
+            selectedBlocks.addAll(deltaBuffer);
+            queueDataPackets(deltaBuffer);
+
             if(selectedBlocks.size() > ServerScanConfig.getMaxSelectedBlocks()){
                 stop("too many selected blocks", true);
             }
 
             markChunkProcessed(chunkPos);
-            queueDataPackets(matches);
+
             scannedChunks.add(ChunkPos.toLong(chunkPos.x, chunkPos.z));
             loads++;
         }
@@ -277,7 +314,8 @@ public final class ScanJob{
         if (fullComplete) return;
         if (eventWorld != world) return;
         if (!isInRange(pos)) return;
-        if (!scannedChunks.contains(ChunkPos.toLong(pos.getX() >> 4, pos.getZ() >> 4))) return;
+        if (!scanCompleted && !scannedChunks.contains(ChunkPos.toLong(pos.getX() >> 4, pos.getZ() >> 4))) return;
+
         boolean oldMatch = BlockMatcher.matches(whitelist, oldState, world, pos);
         boolean newMatch = BlockMatcher.matches(whitelist, newState, world, pos);
         if (oldMatch == newMatch) return;
@@ -300,14 +338,18 @@ public final class ScanJob{
     }
 
     private void queueDelta(BlockPos pos, boolean add, BlockState oldState, BlockState newState) {
-        if(add){
-            selectedBlocks.add(pos);
+        long posLong = pos.asLong();
+        if (add) {
+            selectedBlocks.add(posLong);
             materialList.addTo(newState.getBlock(), 1);
-        }else {
-            selectedBlocks.remove(pos);
+        } else {
+            selectedBlocks.remove(posLong);
             materialList.addTo(oldState.getBlock(), -1);
         }
-        pendingDeltas.add(new DeltaUpdate(add, pos.toImmutable()));
+
+        // Записываем тип (1 или 0) и координаты
+        pendingDeltaTypes.enqueue(add ? 1 : 0);
+        pendingDeltaPos.enqueue(posLong);
     }
 
 
@@ -324,18 +366,26 @@ public final class ScanJob{
                 && pos.getZ() <= range.getMaxZ();
     }
 
-    private void queueDataPackets(List<BlockPos> matches) {
+    private void queueDataPackets(LongArrayList matches) {
         if (matches.isEmpty()) return;
         int index = 0;
         while (index < matches.size()) {
             int end = Math.min(index + ServerScanConfig.getMaxPositionsPerPacket(), matches.size());
-            List<BlockPos> slice = new ArrayList<>(matches.subList(index, end));
-            pendingPackets.add(new PendingPacket(slice));
+            int count = end - index;
+
+            // Сначала записываем количество элементов в этой пачке
+            pendingPacketData.enqueue(count);
+
+            // Затем записываем сами координаты
+            for (int i = index; i < end; i++) {
+                pendingPacketData.enqueue(matches.getLong(i));
+            }
             index = end;
         }
     }
 
-    private List<BlockPos> scanChunk(WorldChunk chunk, ChunkPos chunkPos) {
+    private void scanChunk(WorldChunk chunk, ChunkPos chunkPos, LongArrayList output) {
+        output.clear();
         int minX = Math.max(chunkPos.getStartX(), range.getMinX());
         int maxX = Math.min(chunkPos.getEndX(), range.getMaxX());
         int minZ = Math.max(chunkPos.getStartZ(), range.getMinZ());
@@ -343,26 +393,28 @@ public final class ScanJob{
         int minY = Math.max(range.getMinY(), world.getBottomY());
         int maxY = Math.min(range.getMaxY(), world.getTopYInclusive());
         if (minY > maxY) {
-            return List.of();
+            return;
         }
 
-        List<BlockPos> matches = new ArrayList<>();
+        //LongArrayList matches = new LongArrayList();
         BlockPos.Mutable pos = new BlockPos.Mutable();
         for (int y = minY; y <= maxY; y++) {
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     pos.set(x, y, z);
                     if (BlockMatcher.matches(whitelist, chunk.getBlockState(pos), world, pos)) {
-                        matches.add(pos.toImmutable());
+                        long p = pos.asLong();
+                        output.add(p);
                         materialList.addTo(chunk.getBlockState(pos).getBlock(), 1);
+//                        matches.add(pos.asLong());
+//                        materialList.addTo(chunk.getBlockState(pos).getBlock(), 1);
                     }
                 }
             }
         }
-        return matches;
     }
 
-    public boolean isComplete() {
+    public boolean isFullComplete() {
         return fullComplete;
     }
 
@@ -371,11 +423,15 @@ public final class ScanJob{
     }
 
     public void stop(String cause, boolean restart){
-        subscribers.forEach(subscriber -> SendQueue.addPacket(subscriber, new ScanFullCompletedPayload(jobId, cause, restart)));
+        //subscribers.forEach(subscriber -> SendQueue.addPacket(subscriber, new ScanFullCompletedPayload(jobId, cause, restart)));
+        ScanFullCompletedPayload payload = new ScanFullCompletedPayload(jobId, cause, restart);
+        for (int i = 0; i < subscribers.size(); i++) {
+            SendQueue.addPacket(subscribers.get(i), payload);
+        }
         fullComplete = true;
     }
 
-    private record PendingPacket(List<BlockPos> positions) {}
-    private record DeltaUpdate(boolean add, BlockPos pos) {}
+    private record PendingPacket(LongArrayList positions) {}
+    private record DeltaUpdate(boolean add, long pos) {}
 
 }

@@ -25,15 +25,6 @@ public class ServerNetwork {
             }
         });
 
-        ServerPlayConnectionEvents.DISCONNECT.register((serverPlayNetworkHandler, minecraftServer) -> {
-            Clients.playersWithMod.remove(serverPlayNetworkHandler.player.getUuid());
-        });
-
-        ServerPlayNetworking.registerGlobalReceiver(ClientVersionPayload.ID, (clientVersionPayload, context) -> {
-            Clients.playersWithMod.add(clientVersionPayload.uuid());
-            //References.LOGGER.info("[server] player " + context.server().getPlayerManager().getPlayer(clientVersionPayload.uuid()).getName().getString() + " has areascanner mod");
-        });
-
         ServerPlayNetworking.registerGlobalReceiver(ScanStopPayload.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
             if(player.getPermissionLevel() >= 2){

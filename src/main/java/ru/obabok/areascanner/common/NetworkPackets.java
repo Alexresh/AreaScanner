@@ -23,8 +23,6 @@ public class NetworkPackets {
         PayloadTypeRegistry.playS2C().register(DebugInfoPayload.ID, DebugInfoPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(MaterialListResponsePayload.ID, MaterialListResponsePayload.CODEC);
 
-
-        PayloadTypeRegistry.playC2S().register(ClientVersionPayload.ID, ClientVersionPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(ScanStartPayload.ID, ScanStartPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(ScanStopPayload.ID, ScanStopPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(ScanUnsubscribePayload.ID, ScanUnsubscribePayload.CODEC);

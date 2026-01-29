@@ -10,19 +10,19 @@ import ru.obabok.areascanner.server.network.ScanPacketUtils;
 
 import java.util.List;
 
-public record ScanChunkDataPayload(long jobId, List<BlockPos> positions) implements CustomPayload {
+public record ScanChunkDataPayload(long jobId, long[] positions) implements CustomPayload {
     public static final Id<ScanChunkDataPayload> ID =
             new Id<>(Identifier.of(References.MOD_ID, "scan_chunk_data"));
     public static final PacketCodec<RegistryByteBuf, ScanChunkDataPayload> CODEC =
             PacketCodec.of(ScanChunkDataPayload::write, ScanChunkDataPayload::new);
 
     public ScanChunkDataPayload(RegistryByteBuf buf) {
-        this(buf.readLong(), ScanPacketUtils.readBlockPosList(buf));
+        this(buf.readLong(), buf.readLongArray());
     }
 
     private void write(RegistryByteBuf buf) {
         buf.writeLong(jobId);
-        ScanPacketUtils.writeBlockPosList(buf, positions);
+        buf.writeLongArray(positions);
     }
 
     @Override

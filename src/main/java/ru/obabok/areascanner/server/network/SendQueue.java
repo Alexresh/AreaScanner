@@ -9,20 +9,19 @@ import java.util.ArrayDeque;
 
 public class SendQueue {
     private static final ArrayDeque<Packet> queue = new ArrayDeque<>();
+    private static int sentCount = 0;
 
     public static void addPacket(ServerPlayerEntity player, CustomPayload payload){
         queue.addLast(new Packet(player, payload));
     }
 
     public static void tick(){
-        int sended = 0;
-        while (!queue.isEmpty() && sended <= ServerScanConfig.getMaxPacketsPerTick()){
-            Packet packet = queue.pollFirst();
-            if(packet != null){
-                ServerPlayNetworking.send(packet.player, packet.payload);
-            }
-            sended++;
+        while (!queue.isEmpty() && sentCount < ServerScanConfig.getMaxPacketsPerTick() && queue.peekFirst() != null) {
+            ServerPlayNetworking.send(queue.peekFirst().player, queue.peekFirst().payload);
+            queue.pollFirst();
+            sentCount++;
         }
+        sentCount = 0;
     }
 
     public static int getQueueSize(){
