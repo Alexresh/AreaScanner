@@ -80,6 +80,7 @@ public class Scan {
     }
 
     public static void stopScan(){
+        processing = false;
         selectedBlocks.clear();
         unloadedChunks.clear();
         allChunksCounter = 0;
@@ -88,7 +89,6 @@ public class Scan {
         remoteProcessing = false;
         ChunkScheduler.clearQueue();
         RenderUtil.clearRender();
-        processing = false;
         MaterialListScreen.clear();
     }
 
@@ -180,14 +180,18 @@ public class Scan {
             //delete destroyed blocks from selected blocks
             updateChunk(chunkPos, world);
             //add new blocks to selected blocks
-            for (int x = 0; x < 16; x++) {
-                for (int y = range.getMinY(); y <= range.getMaxY(); y++) {
-                    for (int z = 0; z < 16; z++) {
-                        BlockPos blockPos = new BlockPos(chunkPos.x * 16 + x, y, chunkPos.z * 16 + z);
-                        processBlock(blockPos, world.getBlockState(blockPos), world);
+            checkProcessing();
+            if(processing){
+                for (int x = 0; x < 16; x++) {
+                    for (int y = range.getMinY(); y <= range.getMaxY(); y++) {
+                        for (int z = 0; z < 16; z++) {
+                            BlockPos blockPos = new BlockPos(chunkPos.x * 16 + x, y, chunkPos.z * 16 + z);
+                            processBlock(blockPos, world.getBlockState(blockPos), world);
+                        }
                     }
                 }
             }
+
             //remove chunk from processing
             unloadedChunks.remove(chunkPos);
             checkProcessing();
