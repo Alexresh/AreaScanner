@@ -4,8 +4,9 @@
   "package": "ru.obabok.areascanner.client.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
-    "WorldRendererAccessor",
-    "WorldChunkMixin"
+    "TitleScreenMixin",
+    "WorldChunkMixin",
+    "WorldRendererAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
