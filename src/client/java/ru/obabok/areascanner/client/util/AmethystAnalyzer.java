@@ -3,159 +3,276 @@ package ru.obabok.areascanner.client.util;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
 import ru.obabok.areascanner.client.Scan;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class AmethystAnalyzer {
+
+    private static final int MAX_REMOVALS = 3;
+    private static final int PROGRESS_INTERVAL = 10; // вывод прогресса каждые 10%
+    private static volatile boolean isRunning = false;
+    private static ExecutorService executor;
+
     public static void start() {
+        if (isRunning) {
+            sendMessage("Analysis already in progress!");
+            return;
+        }
+
         BlockBox range = Scan.getRange();
-        if (range == null) return;
-
-        List<BlockPos> budding = getBuddingAmethysts(range);
-        if (budding.isEmpty()) {
-            MinecraftClient.getInstance().player.sendMessage(Text.literal("No budding amethysts found"), false);
+        if (range == null) {
+            sendMessage("No scan range defined!");
             return;
         }
 
-        int initCount = countAmethystsByBuddingBlocks(range, budding);
-        MinecraftClient.getInstance().player.sendMessage(Text.literal("Initial count: " + initCount), false);
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.execute(() -> {
+            if (client.world == null || client.player == null) {
+                sendMessage("No active world!");
+                return;
+            }
 
-        // Изменяемые контейнеры для захвата в рекурсию
-        final int[] maxCount = {initCount};
-        final List<BlockPos>[] bestRemoval = new List[]{new ArrayList<>()};
+            List<BlockPos> budding = collectBuddingAmethysts(client.world, range);
+            if (budding.isEmpty()) {
+                sendMessage("No budding amethysts found");
+                return;
+            }
 
-        // Ограничение для безопасности (комбинаторный взрыв)
-        final int MAX_REMOVALS = Math.min(2, budding.size());
+            WorldSnapshot snapshot = new WorldSnapshot(range, client.world, budding);
+            startAsyncAnalysis(client, budding, snapshot);
+        });
+    }
 
-        for (int k = 1; k <= MAX_REMOVALS; k++) {
-            generateCombinations(budding, k, combination -> {
-                List<BlockPos> remaining = new ArrayList<>(budding);
-                remaining.removeAll(combination);
+    private static void startAsyncAnalysis(
+            MinecraftClient client,
+            List<BlockPos> budding,
+            WorldSnapshot snapshot
+    ) {
+        isRunning = true;
+        sendMessage("Starting analysis (" + budding.size() + " budding blocks)...");
 
-                int count = countAmethystsByBuddingBlocks(range, remaining);
-                if (count > maxCount[0]) {
-                    maxCount[0] = count;
-                    bestRemoval[0] = new ArrayList<>(combination);
+        int initCount = countAmethysts(snapshot, new HashSet<>(budding));
+        sendMessage("Initial count: " + initCount);
 
-                    String blocksStr = combination.stream()
-                            .map(BlockPos::toShortString)
-                            .collect(Collectors.joining(", "));
+        AtomicInteger maxCount = new AtomicInteger(initCount);
+        AtomicReference<List<BlockPos>> bestRemoval = new AtomicReference<>(Collections.emptyList());
+        AtomicInteger processed = new AtomicInteger(0);
 
-                    MinecraftClient.getInstance().player.sendMessage(
-                            Text.literal("New max: " + count + blocksStr),
-                            false
-                    );
+        // Собираем все комбинации
+        List<List<BlockPos>> allCombinations = new ArrayList<>();
+        int maxK = Math.min(MAX_REMOVALS, budding.size());
+        for (int k = 1; k <= maxK; k++) {
+            generateCombinations(budding, k, allCombinations::add);
+        }
 
-                    Scan.selectedBlocks.clear();
-                    Scan.selectedBlocks.addAll(bestRemoval[0]);
-                }
+        int total = allCombinations.size();
+        if (total == 0) {
+            client.execute(() -> {
+                isRunning = false;
+                sendMessage("✓ No blocks to remove (only 1 budding block)");
             });
-        }
-
-        if (!bestRemoval[0].isEmpty()) {
-            MinecraftClient.getInstance().player.sendMessage(
-                    Text.literal("Best result: " + maxCount[0] + " (removed " + bestRemoval[0].size() + " block(s))"),
-                    false
-            );
-        }
-    }
-
-    private static void generateCombinations(List<BlockPos> items, int k, Consumer<List<BlockPos>> consumer) {
-        combineHelper(items, k, 0, new ArrayList<>(), consumer);
-    }
-
-    private static void combineHelper(List<BlockPos> items, int k, int start,
-                                      List<BlockPos> current, Consumer<List<BlockPos>> consumer) {
-        if (current.size() == k) {
-            consumer.accept(new ArrayList<>(current));
             return;
         }
-        // Оптимизация: не заходим в ветки, где недостаточно элементов для завершения комбинации
-        for (int i = start; i <= items.size() - k + current.size(); i++) {
-            current.add(items.get(i));
-            combineHelper(items, k, i + 1, current, consumer);
-            current.remove(current.size() - 1);
+
+        // Параллельная обработка
+        executor = Executors.newFixedThreadPool(
+                Math.min(Runtime.getRuntime().availableProcessors(), 4),
+                r -> {
+                    Thread t = new Thread(r, "AmethystAnalyzer");
+                    t.setDaemon(true);
+                    t.setPriority(Thread.MAX_PRIORITY);
+                    return t;
+                }
+        );
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>(total);
+        for (List<BlockPos> combination : allCombinations) {
+            futures.add(CompletableFuture.runAsync(() -> {
+                if (client.world == null) return; // отмена при выходе из мира
+
+                Set<BlockPos> remaining = new HashSet<>(budding);
+                remaining.removeAll(combination);
+                int count = countAmethysts(snapshot, remaining);
+
+                // Атомарное обновление максимума
+                while (true) {
+                    int currentMax = maxCount.get();
+                    if (count <= currentMax) break;
+                    if (maxCount.compareAndSet(currentMax, count)) {
+                        bestRemoval.set(new ArrayList<>(combination));
+                        break;
+                    }
+                }
+
+                // Прогресс
+                int done = processed.incrementAndGet();
+                if (total > 10 && done % Math.max(1, total / (100 / PROGRESS_INTERVAL)) == 0) {
+                    int progress = done * 100 / total;
+                    if (progress % PROGRESS_INTERVAL == 0) {
+                        client.execute(() ->
+                                sendMessage("Progress: " + progress + "% (" + done + "/" + total + ")")
+                        );
+                    }
+                }
+
+            }, executor));
         }
+
+        // Завершение
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .whenComplete((v, ex) -> {
+                    executor.shutdown();
+                    isRunning = false;
+
+                    client.execute(() -> {
+                        List<BlockPos> result = bestRemoval.get();
+                        int finalMax = maxCount.get();
+
+                        if (!result.isEmpty() && finalMax > initCount) {
+                            Scan.selectedBlocks.clear();
+                            Scan.selectedBlocks.addAll(result);
+
+                            String blocksStr = result.stream()
+                                    .map(BlockPos::toShortString)
+                                    .limit(5)
+                                    .collect(Collectors.joining(", ")) +
+                                    (result.size() > 5 ? " (...+" + (result.size() - 5) + ")" : "");
+
+                            sendMessage("✓ Best result: " + finalMax +
+                                    " (removed " + result.size() + " block(s): " + blocksStr + ")");
+                        } else {
+                            sendMessage("✓ No improvement found (max: " + finalMax + ")");
+                        }
+                    });
+                });
     }
 
-    private static ArrayList<BlockPos> getBuddingAmethysts(BlockBox box){
-        ClientWorld world = MinecraftClient.getInstance().world;
-        if(box == null || world == null) return new ArrayList<>();
-        ArrayList<BlockPos> buddingAmethysts = new ArrayList<>();
+    // === ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===
 
-        for (int x = 0; x < box.getBlockCountX(); x++) {
-            for (int y = 0; y < box.getBlockCountY(); y++) {
-                for (int z = 0; z < box.getBlockCountZ(); z++) {
-                    BlockPos pos = new BlockPos(box.getMinX() + x, box.getMinY() + y, box.getMinZ() + z);
-                    if(world.getBlockState(pos).getBlock() == Blocks.BUDDING_AMETHYST){
-                        buddingAmethysts.add(pos);
+    private static List<BlockPos> collectBuddingAmethysts(World world, BlockBox box) {
+        List<BlockPos> result = new ArrayList<>();
+        for (int x = box.getMinX(); x <= box.getMaxX(); x++) {
+            for (int y = box.getMinY(); y <= box.getMaxY(); y++) {
+                for (int z = box.getMinZ(); z <= box.getMaxZ(); z++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    if (world.getBlockState(pos).isOf(Blocks.BUDDING_AMETHYST)) {
+                        result.add(pos);
                     }
                 }
             }
         }
-        return buddingAmethysts;
-
+        return result;
     }
 
-    private static int countAmethystsByBuddingBlocks(BlockBox range, List<BlockPos> buddingAmethysts){
-        ArrayList<BlockPos> amethysts = new ArrayList<>();
-        ClientWorld world = MinecraftClient.getInstance().world;
-        if(range == null || world == null) return 0;
+    private static class WorldSnapshot {
+        final BlockBox range;
+        final Set<BlockPos> buddingSet; // предварительно вычисленное множество
 
-        for (int i = 0; i < buddingAmethysts.size(); i++) {
-            for (int dir = 0; dir < Direction.values().length; dir++) {
-                BlockPos dirPos = new BlockPos(buddingAmethysts.get(i).offset(Direction.values()[dir],1));
-                if(!buddingAmethysts.contains(dirPos)){
-                    amethysts.add(dirPos);
+        WorldSnapshot(BlockBox range, World world, List<BlockPos> budding) {
+            this.range = range;
+            this.buddingSet = new HashSet<>(budding);
+        }
+    }
+
+    private static int countAmethysts(WorldSnapshot snapshot, Set<BlockPos> budding) {
+        Set<BlockPos> crystalCandidates = new HashSet<>();
+        for (BlockPos bud : budding) {
+            for (Direction dir : Direction.values()) {
+                BlockPos crystalPos = bud.offset(dir);
+                if (snapshot.range.contains(crystalPos) && !budding.contains(crystalPos)) {
+                    crystalCandidates.add(crystalPos);
                 }
             }
         }
-
-        ArrayList<BlockPos> uniqueList = new ArrayList<>();
-        for (BlockPos pos : amethysts) {
-            if (!uniqueList.contains(pos)) {
-                uniqueList.add(pos);
-            }
-        }
-        amethysts = uniqueList;
 
         int count = 0;
-        for (int am = 0; am < amethysts.size(); am++) {
-            boolean addX = true;
-            boolean addY = true;
-            boolean addZ = true;
-            for (int x = range.getMinX(); x < range.getMaxX(); x++) {
-                BlockPos pos = new BlockPos(x, amethysts.get(am).getY(), amethysts.get(am).getZ());
-                if(buddingAmethysts.contains(pos)){
-                    addX = false;
-                }
-            }
-            for (int y = range.getMinY(); y < range.getMaxY(); y++) {
-                BlockPos pos = new BlockPos(amethysts.get(am).getX(), y, amethysts.get(am).getZ());
-                if(buddingAmethysts.contains(pos)){
-                    addY = false;
-                }
-            }
-            for (int z = range.getMinZ(); z < range.getMaxZ(); z++) {
-                BlockPos pos = new BlockPos(amethysts.get(am).getX(), amethysts.get(am).getY(), z);
-                if(buddingAmethysts.contains(pos)){
-                    addZ = false;
-                }
-            }
-            if(addX || addY || addZ){
-                count++;
-            };
-        }
-        return count;
+        for (BlockPos crystal : crystalCandidates) {
+            boolean visibleX = true, visibleY = true, visibleZ = true;
 
+            for (int x = snapshot.range.getMinX(); x <= snapshot.range.getMaxX(); x++) {
+                if (budding.contains(new BlockPos(x, crystal.getY(), crystal.getZ()))) {
+                    visibleX = false;
+                    break;
+                }
+            }
+
+            for (int y = snapshot.range.getMinY(); y <= snapshot.range.getMaxY(); y++) {
+                if (budding.contains(new BlockPos(crystal.getX(), y, crystal.getZ()))) {
+                    visibleY = false;
+                    break;
+                }
+            }
+
+            for (int z = snapshot.range.getMinZ(); z <= snapshot.range.getMaxZ(); z++) {
+                if (budding.contains(new BlockPos(crystal.getX(), crystal.getY(), z))) {
+                    visibleZ = false;
+                    break;
+                }
+            }
+
+            if (visibleX || visibleY || visibleZ) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static void generateCombinations(
+            List<BlockPos> items,
+            int k,
+            Consumer<List<BlockPos>> consumer
+    ) {
+        if (k == 0) {
+            consumer.accept(Collections.emptyList());
+            return;
+        }
+        int[] indices = new int[k];
+        for (int i = 0; i < k; i++) indices[i] = i;
+
+        while (true) {
+            List<BlockPos> combination = new ArrayList<>(k);
+            for (int i = 0; i < k; i++) {
+                combination.add(items.get(indices[i]));
+            }
+            consumer.accept(combination);
+
+            int i = k - 1;
+            while (i >= 0 && indices[i] == items.size() - k + i) i--;
+            if (i < 0) break;
+
+            indices[i]++;
+            for (int j = i + 1; j < k; j++) {
+                indices[j] = indices[j - 1] + 1;
+            }
+        }
+    }
+
+    private static void sendMessage(String text) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.world != null && client.player != null) {
+            client.player.sendMessage(Text.literal("[Amethyst] " + text), false);
+        }
+    }
+
+    public static void cancel() {
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdownNow();
+            isRunning = false;
+            sendMessage("Analysis cancelled");
+        }
     }
 }
