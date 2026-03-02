@@ -117,13 +117,27 @@ public class FastScanJob {
             if (processedChunks >= chunkCursor.size() && pendingNbt.isEmpty() && readyChunks.isEmpty()) {
                 scanCompleted = true;
                 cleanup();
-                subscribe(owner);
+                for (int sub = 0; sub < subscribers.size(); sub++) {
+                    sendSelectedBlocks(subscribers.get(sub));
+                }
             }
         }
 
         if (scanCompleted) {
             if(selectedBlocks.isEmpty()){
                 stop("no blocks found!", false);
+            }
+        }
+    }
+
+    private void sendSelectedBlocks(ServerPlayerEntity player){
+        if(scanCompleted){
+            LongArrayList blockList = new LongArrayList(selectedBlocks);
+            int max = ServerScanConfig.getMaxDeltaPositionsPerPacket();
+            for (int i = 0; i < blockList.size(); i += max) {
+                int end = Math.min(i + max, blockList.size());
+                LongList batch = blockList.subList(i, end);
+                SendQueue.addPacket(player, new ScanDeltaPayload(jobId, true, batch.toLongArray()));
             }
         }
     }
@@ -253,14 +267,10 @@ public class FastScanJob {
     }
 
     public void subscribe(ServerPlayerEntity player){
-        subscribers.remove(player);
+        unsubscribe(player);
         subscribers.add(player);
-        LongArrayList blockList = new LongArrayList(selectedBlocks);
-        int max = ServerScanConfig.getMaxDeltaPositionsPerPacket();
-        for (int i = 0; i < blockList.size(); i += max) {
-            int end = Math.min(i + max, blockList.size());
-            LongList batch = blockList.subList(i, end);
-            SendQueue.addPacket(player, new ScanDeltaPayload(jobId, true, batch.toLongArray()));
+        if(scanCompleted){
+            sendSelectedBlocks(player);
         }
     }
 

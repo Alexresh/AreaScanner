@@ -119,27 +119,6 @@ public class Scan {
         currentFilename = filename;
         allChunksCounter = totalChunks;
         remoteChunkProcessedCounter = totalChunks;
-//        if (_range == null) {
-//            return;
-//        }
-//        int startChunkX = range.getMinX() >> 4;
-//        int startChunkZ = range.getMinZ() >> 4;
-//        int endChunkX = range.getMaxX() >> 4;
-//        int endChunkZ = range.getMaxZ() >> 4;
-//        for (int chunkX = startChunkX; chunkX <= endChunkX; chunkX++) {
-//            for (int chunkZ = startChunkZ; chunkZ <= endChunkZ; chunkZ++) {
-//                unloadedChunks.add(new ChunkPos(chunkX, chunkZ));
-//            }
-//        }
-    }
-
-    public static void applyRemoteChunkData(long[] positions) {
-        if (!remoteProcessing) return;
-        if (positions == null || positions.length == 0) return;
-        for (int i = 0; i < positions.length; i++) {
-            addPositions(positions);
-        }
-        //selectedBlocks.addAll(BlockPos.fromLong(positions));
     }
 
     private static void addPositions(long[] positions){
@@ -171,17 +150,10 @@ public class Scan {
     public static void markRemoteChunkProcessed(long remoteProcessed) {
         if (!remoteProcessing) return;
         remoteChunkProcessedCounter = remoteProcessed;
-        //unloadedChunks.remove(chunkPos);
     }
 
-//    public static void finishRemoteScanProcessing() {
-//        if (!remoteProcessing) return;
-//        //dont touch this!
-//        processing = false;
-//    }
-
     public static void processChunk(ClientWorld world, ChunkPos chunkPos){
-        if(!processing || range == null || world == null || whitelist == null || chunkPos == null) return;
+        if(isRemoteProcessing() || !processing || range == null || world == null || whitelist == null || chunkPos == null) return;
         if(!world.getChunkManager().isChunkLoaded(chunkPos.x, chunkPos.z)) return;
         if((chunkPos.x >= range.getMinX() >> 4) && (chunkPos.x <= range.getMaxX() >> 4) && (chunkPos.z >= range.getMinZ() >> 4) && (chunkPos.z <= range.getMaxZ() >> 4)){
             //delete destroyed blocks from selected blocks
@@ -217,7 +189,6 @@ public class Scan {
                 }
             }
         }
-        //checkProcessing();
     }
 
     private static void checkProcessing(){
