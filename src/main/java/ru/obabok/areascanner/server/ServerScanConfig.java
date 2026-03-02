@@ -23,14 +23,13 @@ public final class ServerScanConfig {
 
     // Имена параметров (для suggest и валидации)
     public static final String[] KEYS = {
-            "budget", "nbt", "chunks", "packets", "positions", "deltaPos", "pendingNbt", "maxSelectedBlock"
+            "budget", "nbt", "chunks", "packets", "deltaPos", "pendingNbt", "maxSelectedBlock"
     };
 
 //    public static final int SCAN_BUDGET_MS = 30;
 //    public static final int MAX_NBT_READS_PER_TICK = 20;
 //    public static final int MAX_CHUNK_LOADS_PER_TICK = 20;
 //    public static final int MAX_PACKETS_PER_TICK = 20;
-//    public static final int MAX_POSITIONS_PER_PACKET = 1024;
 //    public static final int MAX_DELTA_POSITIONS_PER_PACKET = 1024;
 //    public static final int MAX_PENDING_NBT = 192;
 
@@ -39,7 +38,6 @@ public final class ServerScanConfig {
             "nbt", 20,
             "chunks", 20,
             "packets", 20,
-            "positions", 1024,
             "deltaPos", 1024,
             "pendingNbt", 192,
             "maxSelectedBlock", 10000
@@ -47,11 +45,10 @@ public final class ServerScanConfig {
 
     // Ограничения: min, max
     public static final Map<String, int[]> BOUNDS = Map.of(
-            "budget", new int[]{1, 100},
+            "budget", new int[]{1, 1000},
             "nbt", new int[]{1, 1000},
             "chunks", new int[]{1, 1000},
             "packets", new int[]{1, 1000},
-            "positions", new int[]{1, 8192},
             "deltaPos", new int[]{1, 8192},
             "pendingNbt", new int[]{1, 1024},
             "maxSelectedBlock", new int[]{1, 50000}
@@ -82,10 +79,6 @@ public final class ServerScanConfig {
 
     public static int getMaxPacketsPerTick() {
         return VALUES.get("packets");
-    }
-
-    public static int getMaxPositionsPerPacket() {
-        return VALUES.get("positions");
     }
 
     public static int getMaxDeltaPositionsPerPacket() {

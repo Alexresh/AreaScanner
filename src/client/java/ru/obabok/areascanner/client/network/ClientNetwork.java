@@ -80,7 +80,7 @@ public class ClientNetwork {
 
         ClientPlayNetworking.registerGlobalReceiver(ScanChunkSummaryPayload.ID, (payload, context) -> {
             if (payload.jobId() != activeJobId) return;
-            Scan.markRemoteChunkProcessed(payload.chunkPos());
+            Scan.markRemoteChunkProcessed(payload.chunkCount());
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ScanFullCompletedPayload.ID, (payload, context) -> {
@@ -99,21 +99,9 @@ public class ClientNetwork {
             }
         });
 
-        ClientPlayNetworking.registerGlobalReceiver(ScanChunkDataPayload.ID, (payload, context) -> {
-            if (payload.jobId() != activeJobId) return;
-            Scan.applyRemoteChunkData(payload.positions());
-        });
-
         ClientPlayNetworking.registerGlobalReceiver(ScanDeltaPayload.ID, (payload, context) -> {
             if (payload.jobId() != activeJobId) return;
             Scan.applyRemoteDelta(payload.positions(), payload.add());
-        });
-
-        ClientPlayNetworking.registerGlobalReceiver(ScanCompletePayload.ID, (payload, context) -> {
-            if (payload.jobId() != activeJobId) return;
-            if (MinecraftClient.getInstance().player != null) {
-                MinecraftClient.getInstance().player.sendMessage(Text.literal("Server scan finished"), false);
-            }
         });
 
         ClientPlayNetworking.registerGlobalReceiver(DebugInfoPayload.ID, (payload, context) -> {
@@ -132,8 +120,8 @@ public class ClientNetwork {
         ClientPlayNetworking.send(new MaterialListRequestPayload(jobId));
     }
 
-    public static void openSharedScansScreen(Screen parent){
-        sharedScansScreen = new SharedScansScreen(0, parent);
+    public static void openSharedScansScreen(Screen parent, int page){
+        sharedScansScreen = new SharedScansScreen(page, parent);
         openGui(sharedScansScreen);
     }
 

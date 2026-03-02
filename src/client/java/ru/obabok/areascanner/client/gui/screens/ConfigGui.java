@@ -11,7 +11,6 @@ import net.fabricmc.api.Environment;
 import net.minecraft.sound.SoundEvents;
 import ru.obabok.areascanner.client.Config;
 import ru.obabok.areascanner.client.network.ClientNetwork;
-import ru.obabok.areascanner.client.util.AmethystAnalyzer;
 import ru.obabok.areascanner.common.References;
 
 import java.util.Collections;
@@ -38,9 +37,7 @@ public class ConfigGui extends GuiConfigsBase {
         }
         ButtonGeneric testBtn = new ButtonGeneric(width - 75, getScreenHeight() - 30, 65, 20, "Test");
         this.addButton(testBtn, (btn, mousebtn)->{
-            AmethystAnalyzer.start();
-            //client.setScreen(new MaterialListScreen(this, 0));
-            //client.player.playSound(SoundEvents.AMBIENT_CAVE.value());
+            client.player.playSound(SoundEvents.AMBIENT_CAVE.value());
             close();
         });
 
@@ -50,7 +47,7 @@ public class ConfigGui extends GuiConfigsBase {
         ButtonGeneric taskButton = new ButtonGeneric(85, getScreenHeight() - 30, 40, 20, "Task");
         this.addButton(taskButton, (button1, mouseButton) -> openGui(new ScanTaskScreen(this)));
         ButtonGeneric sharedButton = new ButtonGeneric(135, getScreenHeight() - 30, 60, 20, "Shared");
-        this.addButton(sharedButton, (button1, mouseButton) -> ClientNetwork.openSharedScansScreen(this));
+        this.addButton(sharedButton, (button1, mouseButton) -> ClientNetwork.openSharedScansScreen(this, 0));
     }
     private int createButton(int x, int y, int width, ConfigGuiTab tab)
     {

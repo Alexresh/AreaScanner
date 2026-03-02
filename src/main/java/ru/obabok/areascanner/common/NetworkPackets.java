@@ -17,7 +17,6 @@ public class NetworkPackets {
         PayloadTypeRegistry.playS2C().register(ScanRejectedPayload.ID, ScanRejectedPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ScanCompletePayload.ID, ScanCompletePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ScanDeltaPayload.ID, ScanDeltaPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(ScanChunkDataPayload.ID, ScanChunkDataPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ScanListResponsePayload.ID, ScanListResponsePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ScanFullCompletedPayload.ID, ScanFullCompletedPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(DebugInfoPayload.ID, DebugInfoPayload.CODEC);

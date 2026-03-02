@@ -13,23 +13,24 @@ import java.util.*;
 
 public class ServerScanManager {
     private static final ServerScanManager INSTANCE = new ServerScanManager();
-    private final ArrayList<ScanJob> jobs = new ArrayList<>();
+    private final ArrayList<FastScanJob> jobs = new ArrayList<>();
     public static ServerScanManager getInstance() {
         return INSTANCE;
     }
 
     public void startJob(ServerPlayerEntity player, long jobId, BlockBox range, String whitelistName, Whitelist whitelist, String sharedName) {
         for (int i = 0; i < jobs.size(); i++) {
-            if(jobs.get(i).getOwner().getUuid().equals(player.getUuid())){
+            if(player.getUuid().equals(jobs.get(i).getOwner().getUuid()) && Objects.equals(jobs.get(i).getSharedName(), sharedName)){
+                jobs.get(i).stop("Restarted", false);
                 deleteJob(i);
             }
         }
-        jobs.add(new ScanJob(player, jobId, range, whitelist, sharedName, whitelistName));
+        jobs.add(new FastScanJob(player, jobId, range, whitelist, sharedName, whitelistName));
     }
 
     public void stopJob(ServerPlayerEntity player, long jobId, String cause){
         for (int i = 0; i < jobs.size(); i++) {
-            ScanJob job = jobs.get(i);
+            FastScanJob job = jobs.get(i);
 
             if (job.getOwner().getUuid().equals(player.getUuid()) && job.getJobId() == jobId) {
                 job.stop(cause, true);
@@ -41,7 +42,7 @@ public class ServerScanManager {
 
     public void stopOPJob(long jobId){
         for (int i = 0; i < jobs.size(); i++) {
-            ScanJob job = jobs.get(i);
+            FastScanJob job = jobs.get(i);
             if (job.getJobId() == jobId) {
                 job.stop("The Admin said so", true);
                 deleteJob(i);
@@ -84,16 +85,16 @@ public class ServerScanManager {
 
     public String subscribe(ServerPlayerEntity player, long jobId){
         for (int i = 0; i < jobs.size(); i++) {
-            ScanJob job = jobs.get(i);
+            FastScanJob job = jobs.get(i);
+            if(job.getWorld() != player.getServerWorld()){
+                return "wrong world";
+            }
             if (job.getJobId() == jobId) {
-                if (job.canSubscribe()) {
-                    job.subscribe(player);
-                    return null; // Успех
-                }
+                job.subscribe(player);
+                return null;
             }
         }
         return "wrong job id";
-
     }
 
     public void unsubscribe(ServerPlayerEntity player, long jobId){
@@ -112,7 +113,7 @@ public class ServerScanManager {
 
     public void tick() {
         for (int i = jobs.size() - 1; i >= 0; i--) {
-            ScanJob job = jobs.get(i);
+            FastScanJob job = jobs.get(i);
             job.tick();
 
             if (job.isFullComplete()) {

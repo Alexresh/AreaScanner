@@ -24,6 +24,7 @@ public class Scan {
     private static BlockBox range;
     private static boolean processing = false;
     private static boolean remoteProcessing = false;
+    private static long remoteChunkProcessedCounter;
     private static long allChunksCounter;
     private static String currentFilename;
 
@@ -117,18 +118,19 @@ public class Scan {
         range = _range;
         currentFilename = filename;
         allChunksCounter = totalChunks;
-        if (_range == null) {
-            return;
-        }
-        int startChunkX = range.getMinX() >> 4;
-        int startChunkZ = range.getMinZ() >> 4;
-        int endChunkX = range.getMaxX() >> 4;
-        int endChunkZ = range.getMaxZ() >> 4;
-        for (int chunkX = startChunkX; chunkX <= endChunkX; chunkX++) {
-            for (int chunkZ = startChunkZ; chunkZ <= endChunkZ; chunkZ++) {
-                unloadedChunks.add(new ChunkPos(chunkX, chunkZ));
-            }
-        }
+        remoteChunkProcessedCounter = totalChunks;
+//        if (_range == null) {
+//            return;
+//        }
+//        int startChunkX = range.getMinX() >> 4;
+//        int startChunkZ = range.getMinZ() >> 4;
+//        int endChunkX = range.getMaxX() >> 4;
+//        int endChunkZ = range.getMaxZ() >> 4;
+//        for (int chunkX = startChunkX; chunkX <= endChunkX; chunkX++) {
+//            for (int chunkZ = startChunkZ; chunkZ <= endChunkZ; chunkZ++) {
+//                unloadedChunks.add(new ChunkPos(chunkX, chunkZ));
+//            }
+//        }
     }
 
     public static void applyRemoteChunkData(long[] positions) {
@@ -162,9 +164,14 @@ public class Scan {
         }
     }
 
-    public static void markRemoteChunkProcessed(ChunkPos chunkPos) {
+    public static long getRemoteChunkProcessedCounter(){
+        return remoteChunkProcessedCounter;
+    }
+
+    public static void markRemoteChunkProcessed(long remoteProcessed) {
         if (!remoteProcessing) return;
-        unloadedChunks.remove(chunkPos);
+        remoteChunkProcessedCounter = remoteProcessed;
+        //unloadedChunks.remove(chunkPos);
     }
 
 //    public static void finishRemoteScanProcessing() {

@@ -77,14 +77,14 @@ public class SharedScansScreen extends Screen {
             }
 
             ButtonWidget subscribeBtn = ButtonWidget.builder(
-                            Text.literal(info.completedScan() ? "Subscribe" : "Busy"),
+                            Text.literal("Subscribe"),
                             btn -> {
                                 ClientNetwork.subscribeToScan(info);
                                 refresh();
                             })
                     .dimensions(width - 115, y, 60, 20).build();
 
-            subscribeBtn.active = info.completedScan() && ClientNetwork.getDebugServerPacketsQueue() <= 100;
+            subscribeBtn.active = ClientNetwork.getActiveJobId() == 0 && ClientNetwork.getDebugServerPacketsQueue() <= 100;
             addDrawableChild(subscribeBtn);
 
             addDrawableChild(new ButtonWidget.Builder(Text.literal("[M]"), button -> {
@@ -104,7 +104,7 @@ public class SharedScansScreen extends Screen {
         int buttonY = height - 60;
         if (currentPage > 0) {
             addDrawableChild(ButtonWidget.builder(Text.literal("< Prev"), btn ->
-                    ClientNetwork.openSharedScansScreen(parent)//client.setScreen(new SharedScansScreen(currentPage - 1))
+                    ClientNetwork.openSharedScansScreen(parent, currentPage - 1)//client.setScreen(new SharedScansScreen(currentPage - 1))
             ).dimensions(width / 2 - 120, buttonY, 80, 20).build());
         }
 
@@ -115,7 +115,7 @@ public class SharedScansScreen extends Screen {
 
         if (to < scans.size()) {
             addDrawableChild(ButtonWidget.builder(Text.literal("Next >"), btn ->
-                    ClientNetwork.openSharedScansScreen(parent)//client.setScreen(new SharedScansScreen(currentPage + 1))
+                    ClientNetwork.openSharedScansScreen(parent, currentPage + 1)//client.setScreen(new SharedScansScreen(currentPage + 1))
             ).dimensions(width / 2 + 40, buttonY, 80, 20).build());
         }
     }
@@ -131,7 +131,7 @@ public class SharedScansScreen extends Screen {
 
     private void refresh(){
         ClientNetwork.requestSharedList();
-        ClientNetwork.openSharedScansScreen(parent);
+        ClientNetwork.openSharedScansScreen(parent, currentPage);
     }
 
     @Override

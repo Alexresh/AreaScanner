@@ -85,7 +85,7 @@ public class HudRender {
             resetScanTiming();
             return;
         }
-        long processed = Math.max(0L, total - Scan.unloadedChunks.size());
+        long processed = Scan.getRemoteChunkProcessedCounter();
         if(total == processed) return;
         updateScanTiming(processed, total);
         double percent = Math.min(100.0, (processed * 100.0) / total);
