@@ -143,8 +143,8 @@ public class Scan {
         }
     }
 
-    public static long getRemoteChunkProcessedCounter(){
-        return remoteChunkProcessedCounter;
+    public static long getChunkProcessedCounter(){
+        return isRemoteProcessing() ? remoteChunkProcessedCounter : allChunksCounter - unloadedChunks.size();
     }
 
     public static void markRemoteChunkProcessed(long remoteProcessed) {
