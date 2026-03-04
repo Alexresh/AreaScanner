@@ -34,7 +34,7 @@ public final class ServerScanConfig {
 //    public static final int MAX_PENDING_NBT = 192;
 
     private static final Map<String, Integer> DEFAULTS = Map.of(
-            "budget", 30,
+            "budget", 3,
             "nbt", 20,
             "chunks", 20,
             "packets", 20,
@@ -45,10 +45,10 @@ public final class ServerScanConfig {
 
     // Ограничения: min, max
     public static final Map<String, int[]> BOUNDS = Map.of(
-            "budget", new int[]{1, 1000},
-            "nbt", new int[]{1, 1000},
-            "chunks", new int[]{1, 1000},
-            "packets", new int[]{1, 1000},
+            "budget", new int[]{1, 50},
+            "nbt", new int[]{1, 1024},
+            "chunks", new int[]{1, 1024},
+            "packets", new int[]{1, 1024},
             "deltaPos", new int[]{1, 8192},
             "pendingNbt", new int[]{1, 1024},
             "maxSelectedBlock", new int[]{1, 50000}
@@ -71,10 +71,6 @@ public final class ServerScanConfig {
 
     public static int getMaxNbtReadsPerTick() {
         return VALUES.get("nbt");
-    }
-
-    public static int getMaxChunkLoadsPerTick() {
-        return VALUES.get("chunks");
     }
 
     public static int getMaxPacketsPerTick() {

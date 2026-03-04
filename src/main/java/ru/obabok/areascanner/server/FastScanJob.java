@@ -15,7 +15,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.chunk.WrapperProtoChunk;
 import net.minecraft.world.storage.NbtScannable;
 import net.minecraft.world.storage.StorageIoWorker;
 import ru.obabok.areascanner.common.BlockMatcher;
@@ -92,25 +92,11 @@ public class FastScanJob {
     }
 
     public void tick(){
-        long startNs = System.nanoTime();
-        long budgetNs = ServerScanConfig.getBudgetMs() * 1_000_000L;
-
-        sendCooldown--;
-        if(sendCooldown <= 0){
-            updateChunkProcess();
-            sendCooldown = 20;
-        }
         sendDeltaDataPackets();
 
         if (!scanCompleted) {
             processCompletedNbtChecks();
-            if (timeExceeded(startNs, budgetNs)) {
-                return;
-            }
-            scanReadyChunks(startNs, budgetNs);
-            if (timeExceeded(startNs, budgetNs)) {
-                return;
-            }
+            scanReadyChunks();
 
             scheduleNbtChecks();
 
@@ -122,7 +108,11 @@ public class FastScanJob {
                 }
             }
         }
-
+        sendCooldown--;
+        if(sendCooldown <= 0){
+            updateChunkProcess();
+            sendCooldown = 20;
+        }
         if (scanCompleted) {
             if(selectedBlocks.isEmpty()){
                 stop("no blocks found!", false);
@@ -195,23 +185,27 @@ public class FastScanJob {
         }
     }
 
-    private void scanReadyChunks(long startNs, long budgetNs) {
-        int loads = 0;
-        while (!readyChunks.isEmpty() && loads < ServerScanConfig.getMaxChunkLoadsPerTick()) {
-            if (timeExceeded(startNs, budgetNs)) {
+    private void scanReadyChunks() {
+        long startNs = System.nanoTime();
+        while (!readyChunks.isEmpty()) {
+            if (timeExceeded(startNs, ServerScanConfig.getBudgetMs() * 1_000_000L)) {
                 break;
             }
             long pos = readyChunks.dequeueLong();
             ChunkPos chunkPos = new ChunkPos(pos);
-            Chunk chunk = world.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.FULL, true);
-            if (!(chunk instanceof WorldChunk worldChunk)) {
+            Chunk chunk = world.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.EMPTY, true);
+            if (!(chunk instanceof WrapperProtoChunk worldChunk)) {
                 owner.sendMessage(Text.literal(References.MOD_ID + " chunk " + new ChunkPos(pos) + " is not world chunk! Cancelling"));
                 stop("Chunk " + new ChunkPos(pos) + " is not world chunk! Cancelling", true);
                 return;
             }
-
             scanChunk(worldChunk, chunkPos, deltaBuffer);
             selectedBlocks.addAll(deltaBuffer);
+            for (int i = 0; i < deltaBuffer.size(); i++) {
+                pendingDeltaTypes.enqueue(1);
+                pendingDeltaPos.enqueue(deltaBuffer.getLong(i));
+            }
+
 
             if(selectedBlocks.size() > ServerScanConfig.getMaxSelectedBlocks()){
                 stop("too many selected blocks", true);
@@ -219,7 +213,6 @@ public class FastScanJob {
 
             processedChunks++;
             scannedChunks.add(ChunkPos.toLong(chunkPos.x, chunkPos.z));
-            loads++;
         }
     }
 
@@ -274,7 +267,7 @@ public class FastScanJob {
         }
     }
 
-    private void scanChunk(WorldChunk chunk, ChunkPos chunkPos, LongArrayList output) {
+    private void scanChunk(WrapperProtoChunk chunk, ChunkPos chunkPos, LongArrayList output) {
         output.clear();
         int minX = Math.max(chunkPos.getStartX(), range.getMinX());
         int maxX = Math.min(chunkPos.getEndX(), range.getMaxX());
