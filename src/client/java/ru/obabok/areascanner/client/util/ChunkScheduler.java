@@ -69,7 +69,10 @@ public class ChunkScheduler {
     }
 
     public static void addChunkToProcess(ChunkPos pos){
-        chunkQueue.add(pos);
+        if (!chunkQueue.contains(pos)) {
+            chunkQueue.add(pos);
+        }
+
     }
 
 }

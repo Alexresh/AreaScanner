@@ -31,23 +31,27 @@ public class AreaScannerClient implements ClientModInitializer {
             ClientNetwork.register();
             ClientCommandRegistrationCallback.EVENT.register((commandDispatcher, commandRegistryAccess) -> ScanCommand.register(commandDispatcher));
             ClientPlayerBlockBreakEvents.AFTER.register((clientWorld, clientPlayerEntity, blockPos, blockState) ->{
-                if (Scan.isRemoteProcessing()) {
-                    return;
+                if (Scan.isRemoteProcessing()) return;
+                if(Scan.isProcessing()){
+                    ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos));
                 }
-                ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos));
             });
 
             AttackBlockCallback.EVENT.register((playerEntity, world, hand, blockPos, direction) -> {
                 if(!world.isClient) return ActionResult.PASS;
                 if (Scan.isRemoteProcessing()) return ActionResult.PASS;
-                ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos));
+                if(Scan.isProcessing()) {
+                    ChunkScheduler.addChunkToProcess(new ChunkPos(blockPos));
+                }
                 return ActionResult.PASS;
             });
 
             UseBlockCallback.EVENT.register((playerEntity, world, hand, blockHitResult) -> {
                 if(!world.isClient) return ActionResult.PASS;
                 if (Scan.isRemoteProcessing()) return ActionResult.PASS;
-                ChunkScheduler.addChunkToProcess(new ChunkPos(blockHitResult.getBlockPos()));
+                if(Scan.isProcessing()) {
+                    ChunkScheduler.addChunkToProcess(new ChunkPos(blockHitResult.getBlockPos()));
+                }
                 return ActionResult.PASS;
             });
 
@@ -60,10 +64,10 @@ public class AreaScannerClient implements ClientModInitializer {
                     int chunkMinZ = chunkPos.getStartZ();
                     int chunkMaxZ = chunkPos.getEndZ();
                     if (range.intersectsXZ(chunkMinX, chunkMinZ, chunkMaxX, chunkMaxZ)) {
-                        if (Scan.isRemoteProcessing()) {
-                            return;
+                        if (Scan.isRemoteProcessing()) return;
+                        if(Scan.isProcessing()) {
+                            ChunkScheduler.addChunkToProcess(chunkPos);
                         }
-                        ChunkScheduler.addChunkToProcess(chunkPos);
                     }
                 }
             });
