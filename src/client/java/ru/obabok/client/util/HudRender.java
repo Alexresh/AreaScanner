@@ -318,7 +318,7 @@ public class HudRender {
     private static MutableComponent getSpinnerFrame() {
 
         int indexA = (int) ((System.currentTimeMillis() / 50) % hudAnimation.length);
-        return Component.literal( hudAnimation[indexA]).withStyle(ChatFormatting.GOLD);
+        return Component.literal(hudAnimation[indexA]).withColor(Config.Generic.UNLOADED_CHUNK_COLOR.getIntegerValue());
     }
 
     private static void addScanStatus() {

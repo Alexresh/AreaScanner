@@ -6,13 +6,19 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.CommonColors;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 import ru.obabok.client.Scan;
+import ru.obabok.client.gui.widgets.SuggestionListWidget;
 import ru.obabok.client.gui.widgets.ToggelableWidgedDropDownList;
 import ru.obabok.client.models.ScreenPlus;
 import ru.obabok.client.util.WhitelistManager;
@@ -20,9 +26,7 @@ import ru.obabok.common.BlockMatcher;
 import ru.obabok.common.model.Whitelist;
 import ru.obabok.common.model.WhitelistItem;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class WhitelistEditorScreen extends ScreenPlus {
 
@@ -36,7 +40,15 @@ public class WhitelistEditorScreen extends ScreenPlus {
     private Button addToWhitelistBtn;
     private static final List<String> waterloggedValues = List.of("true", "false");
     public static List<String> pistonBehaviorValues = Arrays.stream(Scan.PistonBehavior.values()).map(Enum::toString).toList();
-
+    private static final List<String> BLOCK_IDS = BuiltInRegistries.BLOCK.keySet()
+            .stream()
+            .map(Identifier::toString)
+            .sorted(Comparator.comparing(id -> {
+                int colon = id.indexOf(':');
+                return colon >= 0 ? id.substring(colon + 1) : id;
+            }))
+            .toList();
+    private SuggestionListWidget blockSuggestions;
 
     private ToggelableWidgedDropDownList<String> waterloggedWidget;
     private ToggelableWidgedDropDownList<String> pistonBehaviorWidget;
@@ -71,7 +83,14 @@ public class WhitelistEditorScreen extends ScreenPlus {
         //block input
         addRenderableWidget(new StringWidget(30, y, 120, 20, Component.literal("Block"), font));
         blockInput = new EditBox(font, 130, y, 100, 20, Component.empty());
+        blockInput.setMaxLength(256);
+        blockInput.setResponder(this::onBlockTextChanged);
         addRenderableWidget(blockInput);
+
+        int listWidth = 220;
+
+
+
 
         y+=rowHeight;
         //waterlogged
@@ -102,6 +121,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         });
         addRenderableWidget(blastResistanceValue);
 
+
         y = 30;
         int i = 0;
         for (WhitelistItem item : pageBlocks) {
@@ -120,6 +140,12 @@ public class WhitelistEditorScreen extends ScreenPlus {
             addRenderableWidget(widget);
             y += 23;
         }
+        blockSuggestions = addWidget(new SuggestionListWidget(
+                blockInput,
+                blockInput.getX(),
+                blockInput.getY() + blockInput.getHeight() + 1,
+                listWidth
+        ));
 
         //presets
         addRenderableWidget(new StringWidget(width - 130, 10, 100, 20, Component.literal("Presets"), font));
@@ -166,6 +192,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         addRenderableWidget(addToWhitelistBtn);
 
     }
+
 
     private @NonNull ToggelableWidgedDropDownList<Whitelist> getPresets() {
         List<Whitelist> list = new ArrayList<>();
@@ -223,5 +250,167 @@ public class WhitelistEditorScreen extends ScreenPlus {
         addToWhitelistBtn.active = validateCreatedWhitelistItem();
         super.extractRenderState(context, mouseX, mouseY, delta);
         context.text(font, Component.literal(createdWhitelistItem.toString()), 30,240, CommonColors.WHITE, true);
+        blockSuggestions.extractRenderState(context, mouseX, mouseY, delta);
     }
+
+    @Override
+    public boolean keyPressed(@NonNull KeyEvent event) {
+        if (blockSuggestions != null && blockSuggestions.visible) {
+            if (event.key() == GLFW.GLFW_KEY_DOWN) {
+                blockSuggestions.selectRelative(1);
+                return true;
+            }
+
+            if (event.key() == GLFW.GLFW_KEY_UP) {
+                blockSuggestions.selectRelative(-1);
+                return true;
+            }
+
+            if (event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER || event.key() == GLFW.GLFW_KEY_TAB) {
+                if (blockSuggestions.confirmSelected()) {
+                    return true;
+                }
+            }
+
+            if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+                blockSuggestions.hide();
+                return true;
+            }
+        }
+
+        return super.keyPressed(event);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (blockSuggestions != null && blockSuggestions.visible) {
+            if (verticalAmount > 0) {
+                blockSuggestions.selectRelative(-1);
+                return true;
+            }
+
+            if (verticalAmount < 0) {
+                blockSuggestions.selectRelative(1);
+                return true;
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (blockSuggestions != null && blockSuggestions.visible && blockSuggestions.isMouseOver(event.x(), event.y())) {
+            blockSuggestions.mouseClicked(event, doubleClick);
+
+            this.setFocused(blockInput);
+            blockInput.setFocused(true);
+            return true;
+        }
+
+        boolean result = super.mouseClicked(event, doubleClick);
+
+        //close when clicked elsewhere
+        if (blockSuggestions != null && blockSuggestions.visible
+                && !blockSuggestions.isMouseOver(event.x(), event.y())
+                && !blockInput.isMouseOver(event.x(), event.y())) {
+            blockSuggestions.hide();
+        }
+
+        //show tooltip if clicked
+        if (blockInput.isFocused()
+                && blockInput.isMouseOver(event.x(), event.y())
+                && !blockInput.getValue().isEmpty()) {
+            onBlockTextChanged(blockInput.getValue());
+        }
+
+        return result;
+    }
+
+    private void onBlockTextChanged(String text) {
+        if (blockSuggestions == null) {
+            return;
+        }
+
+        Block block = parseBlock(text);
+        createdWhitelistItem.block = block;
+        blockInput.setTextColor(block != null ? 0xFF55FF55 : 0xFFFFFFFF);
+
+        String query = normalize(text);
+
+        if (query.isEmpty()) {
+            blockSuggestions.setSuggestions(List.of());
+            return;
+        }
+
+
+        List<String> matches = BLOCK_IDS.stream()
+                .filter(id -> id.contains(query))
+                .sorted(Comparator.comparingInt((String id) -> suggestionScore(id, query))
+                        .thenComparing(WhitelistEditorScreen::pathOf))
+                .toList();
+
+        blockSuggestions.setSuggestions(matches);
+    }
+
+    private static String normalize(String s) {
+        if (s == null) {
+            return "";
+        }
+
+        return s.trim().toLowerCase(Locale.ROOT).replace(' ', '_');
+    }
+    @Nullable
+    private Block parseBlock(String raw) {
+        String normalized = normalize(raw);
+
+        if (normalized.isEmpty()) {
+            return null;
+        }
+
+        Identifier id = tryParseId(normalized);
+
+        if (id == null && !normalized.contains(":")) {
+            id = tryParseId("minecraft:" + normalized);
+        }
+
+        if (id != null && BuiltInRegistries.BLOCK.containsKey(id)) {
+            return BuiltInRegistries.BLOCK.getValue(id);
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private Identifier tryParseId(String s) {
+        try {
+            return Identifier.parse(s);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String pathOf(String id) {
+        int colon = id.indexOf(':');
+        return colon >= 0 ? id.substring(colon + 1) : id;
+    }
+
+    private static int suggestionScore(String id, String query) {
+        String path = pathOf(id);
+
+        if (id.equals(query) || path.equals(query)) {
+            return 0;
+        }
+
+        if (id.startsWith(query) || path.startsWith(query)) {
+            return 1;
+        }
+
+        int idx = path.indexOf(query);
+        if (idx > 0 && path.charAt(idx - 1) == '_') {
+            return 2;
+        }
+
+        return 3;
+    }
+
 }
