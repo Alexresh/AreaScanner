@@ -1,19 +1,18 @@
 package ru.obabok.common.model;
 
 
-import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
 public class WhitelistItem {
-    public Block block;
+    public String block;
     public String waterlogged;
     public String blastResistance;
     public String pistonBehavior;
 
 
-    public WhitelistItem(@Nullable Block _block, @Nullable String _waterlogged, @Nullable String _blastResistance, @Nullable String _pistonBehavior){
+    public WhitelistItem(@Nullable String _block, @Nullable String _waterlogged, @Nullable String _blastResistance, @Nullable String _pistonBehavior){
         if(_block != null){
             this.block = _block;
         }

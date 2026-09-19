@@ -25,25 +25,22 @@ public class Config implements IConfigHandler {
     public static class Generic
     {
         public static final ConfigInteger UNLOADED_CHUNK_MAX_DISTANCE = new ConfigInteger("unloadedChunkMaxDistance", 500).apply(GENERIC_KEY);
+        public static final ConfigBoolean UNLOADED_CHUNK_HUD_RENDER = new ConfigBoolean("unloadedChunkHudRender", false).apply(GENERIC_KEY);
         public static final ConfigInteger UNLOADED_CHUNK_Y_OFFSET = new ConfigInteger("unloadedChunkYOffset", -50).apply(GENERIC_KEY);
         public static final ConfigColor UNLOADED_CHUNK_COLOR = new ConfigColor("unloadedChunkColor", "#ffffec59").apply(GENERIC_KEY);
 
-        //public static final ConfigFloat UNLOADED_CHUNK_SCALE = new ConfigFloat("unloadedChunkScale", 4.0f, 0.1f, 20f).apply(GENERIC_KEY);
 
         public static final ConfigInteger SELECTED_BLOCKS_MAX_DISTANCE = new ConfigInteger("selectedBlocksMaxDistance", -1).apply(GENERIC_KEY);
         public static final ConfigColor SELECTED_BLOCKS_COLOR = new ConfigColor("selectedBlocksColor", "#AAD71B1B").apply(GENERIC_KEY);
 
         public static final ConfigBoolean AREA_EDGE_RENDER = new ConfigBoolean("areaEdgeRender", true).apply(GENERIC_KEY);
         public static final ConfigColor AREA_EDGE_COLOR = new ConfigColor("areaEdgeColor", "#16FFFFFF").apply(GENERIC_KEY);
-        //public static final ConfigBoolean OLD_BLOCK_RENDER = new ConfigBoolean("oldBlockRender", true).apply(GENERIC_KEY);
-        //public static final ConfigBoolean OLD_CHUNK_RENDER = new ConfigBoolean("oldChunkRender", true).apply(GENERIC_KEY);
-
-        //public static final ConfigBoolean RENDER_PROCESS_QUEUE = new ConfigBoolean("renderProcessQueue", false).apply(GENERIC_KEY);
 
         public static final ConfigInteger LOD1 = new ConfigInteger("LOD1", 30).apply(GENERIC_KEY);
         public static final ConfigInteger LOD2 = new ConfigInteger("LOD2", 50).apply(GENERIC_KEY);
         public static final ConfigInteger LOD2_HORIZON = new ConfigInteger("LOD2_horizon", 100).apply(GENERIC_KEY);
         public static final ConfigBoolean LOD2_HUD = new ConfigBoolean("LOD2_hud", true).apply(GENERIC_KEY);
+        public static final ConfigBoolean GROUP_RENDER = new ConfigBoolean("group_render", false).apply(GENERIC_KEY);
 
         public static final ConfigInteger PROCESS_COOLDOWN = new ConfigInteger("processCooldown", 10, 1, 100).apply(GENERIC_KEY);
         public static final ConfigBoolean REALTIME_UPDATE = new ConfigBoolean("realtimeUpdate", false).apply(GENERIC_KEY);
@@ -55,6 +52,7 @@ public class Config implements IConfigHandler {
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 UNLOADED_CHUNK_MAX_DISTANCE,
+                UNLOADED_CHUNK_HUD_RENDER,
                 UNLOADED_CHUNK_Y_OFFSET,
                 UNLOADED_CHUNK_COLOR,
 
@@ -74,6 +72,7 @@ public class Config implements IConfigHandler {
                 LOD2,
                 LOD2_HORIZON,
                 LOD2_HUD,
+                GROUP_RENDER,
 
                 SPLITTER,
 
@@ -90,6 +89,7 @@ public class Config implements IConfigHandler {
     public static class Hud
     {
         public static final ConfigBooleanHotkeyed HUD_ENABLE = new ConfigBooleanHotkeyed("hudEnable", true, "").apply(HUD_KEY);
+        public static final ConfigBoolean HUD_RENDER_TIME = new ConfigBoolean("hudRenderTime", false).apply(HUD_KEY);
         public static final ConfigInteger HUD_POS_X = new ConfigInteger("hudPosX", 0).apply(HUD_KEY);
         public static final ConfigInteger HUD_POS_Y = new ConfigInteger("hudPosY", 0).apply(HUD_KEY);
         public static final ConfigOptionList HUD_ALIGNMENT = new ConfigOptionList("hudAlignment", HudAlignment.BOTTOM_RIGHT).apply(HUD_KEY);
@@ -97,6 +97,7 @@ public class Config implements IConfigHandler {
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 HUD_ENABLE,
+                HUD_RENDER_TIME,
                 HUD_POS_X,
                 HUD_POS_Y,
                 HUD_ALIGNMENT,
@@ -133,7 +134,7 @@ public class Config implements IConfigHandler {
                 JsonObject root = element.getAsJsonObject();
 
                 ConfigUtils.readConfigBase(root, "Generic", Generic.OPTIONS);
-                ConfigUtils.readConfigBase(root, "HUD", Hud.OPTIONS);
+                ConfigUtils.readConfigBase(root, "Hud", Hud.OPTIONS);
                 ChunkScheduler.updatePeriod(Generic.PROCESS_COOLDOWN.getIntegerValue());
             }
             else

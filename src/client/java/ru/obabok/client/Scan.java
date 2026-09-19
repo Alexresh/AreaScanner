@@ -14,7 +14,7 @@ import ru.obabok.client.gui.screens.MaterialListScreen;
 import ru.obabok.common.model.BlockArea;
 import ru.obabok.client.models.ScanState;
 import ru.obabok.client.util.ChunkScheduler;
-import ru.obabok.client.util.RenderUtil;
+import ru.obabok.client.render.RenderUtil;
 import ru.obabok.client.util.WhitelistManager;
 import ru.obabok.common.BlockMatcher;
 import ru.obabok.common.model.Whitelist;
@@ -33,6 +33,7 @@ public class Scan {
     private static long remoteChunkProcessedCounter;
     private static long allChunksCounter;
     private static String currentFilename;
+    public static boolean renderDirty = true;
 
     public enum PistonBehavior {
             NORMAL,
@@ -64,6 +65,7 @@ public class Scan {
             unloadedChunks.add(chunkPos);
             allChunksCounter++;
         }
+        renderDirty = true;
         return 1;
     }
 
@@ -72,11 +74,13 @@ public class Scan {
         ScanState.saveData(new ScanState(selectedBlocks, unloadedChunks, whitelist, area, allChunksCounter, currentFilename));
         stopScan();
     }
+
     public static boolean loadState(){
         ScanState saveData = ScanState.loadData();
         if(saveData == null) return false;
         selectedBlocks = (HashSet<BlockPos>) saveData.selectedBlocks;
         unloadedChunks = (HashSet<ChunkPos>) saveData.unloadedChunks;
+        renderDirty = true;
         whitelist = saveData.whitelist;
         area = saveData.range;
         allChunksCounter = saveData.allChunksCounter;
@@ -89,6 +93,7 @@ public class Scan {
         processing = false;
         selectedBlocks.clear();
         unloadedChunks.clear();
+        renderDirty = true;
         allChunksCounter = 0;
         area = null;
         currentFilename = null;
@@ -130,12 +135,14 @@ public class Scan {
         for (int i = 0; i < positions.length; i++) {
             selectedBlocks.add(BlockPos.of(positions[i]));
         }
+        renderDirty = true;
     }
 
     private static void removePositions(long[] positions){
         for (int i = 0; i < positions.length; i++) {
             selectedBlocks.remove(BlockPos.of(positions[i]));
         }
+        renderDirty = true;
     }
 
     public static void applyRemoteDelta(long[] positions, boolean add) {
@@ -192,7 +199,9 @@ public class Scan {
             }
         }
 
-        unloadedChunks.remove(chunkPos);
+        if(unloadedChunks.remove(chunkPos)){
+            renderDirty = true;
+        }
         checkProcessing();
     }
 
@@ -204,6 +213,7 @@ public class Scan {
             if (blockPos.getX() >> 4 == chunkPos.x() && blockPos.getZ() >> 4 == chunkPos.z()) {
                 if(!BlockMatcher.matches(whitelist, world.getBlockState(blockPos), world, blockPos)){
                     iterator.remove();
+                    renderDirty = true;
                     MaterialListScreen.addBlock(world.getBlockState(blockPos).getBlock(), -1);
                 }
             }
@@ -225,7 +235,9 @@ public class Scan {
         if (whitelist == null) return;
 
         if (BlockMatcher.matches(whitelist, blockState, world, blockPos)) {
-            selectedBlocks.add(blockPos);
+            if(selectedBlocks.add(blockPos)){
+                renderDirty = true;
+            }
             MaterialListScreen.addBlock(blockState.getBlock(), 1);
         }
 

@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import ru.obabok.client.Scan;
+import ru.obabok.client.render.RenderUtil;
 import ru.obabok.common.References;
 
 import java.util.Queue;
@@ -53,12 +54,17 @@ public class ChunkScheduler {
         renderScheduledFuture = schedulerRender.scheduleAtFixedRate(() -> {
             if (!isRunning) return;
             try {
-                RenderUtil.clearRender();
-                RenderUtil.addAllRenderBlocks(Scan.selectedBlocks);
-                RenderUtil.addAllRenderChunks(Scan.unloadedChunks);
+                if(Scan.renderDirty){
+                    RenderUtil.clearRender();
+                    RenderUtil.updateAll(Scan.selectedBlocks, Scan.unloadedChunks);
+                    //RenderUtil.addAllRenderBlocks(Scan.selectedBlocks);
+                    //RenderUtil.addAllRenderChunks(Scan.unloadedChunks);
+                    Scan.renderDirty = false;
+                    RenderUtil.onDataUpdated();
+                }
             }catch (Exception ignored){}
 
-        }, 0, 1000, TimeUnit.MILLISECONDS);
+        }, 0, 500, TimeUnit.MILLISECONDS);
 
 
     }

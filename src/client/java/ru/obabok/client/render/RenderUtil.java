@@ -1,4 +1,4 @@
-package ru.obabok.client.util;
+package ru.obabok.client.render;
 
 import com.mojang.blaze3d.IndexType;
 import com.mojang.blaze3d.PrimitiveTopology;
@@ -23,6 +23,8 @@ import org.joml.*;
 import ru.obabok.client.Config;
 import ru.obabok.client.Scan;
 import ru.obabok.client.gui.screens.ScanTaskScreen;
+import ru.obabok.client.models.BlockGroup;
+import ru.obabok.client.util.ConnectedBlockFinder;
 import ru.obabok.common.model.BlockArea;
 import ru.obabok.common.References;
 
@@ -35,7 +37,7 @@ import static fi.dy.masa.malilib.render.RenderUtils.renderAreaOutline;
 
 public class RenderUtil {
     public static final List<BlockPos> renderBlocksList = new CopyOnWriteArrayList<>();
-    private static final List<ChunkPos> renderChunksList = new CopyOnWriteArrayList<>();
+    public static final List<ChunkPos> renderChunksList = new CopyOnWriteArrayList<>();
     private static final Minecraft client = Minecraft.getInstance();
 
     private static final ByteBufferBuilder allocator = new ByteBufferBuilder(1024 * 1024 * 2); // 2 MB
@@ -43,7 +45,11 @@ public class RenderUtil {
     private static final Vector4f COLOR_MODULATOR = new Vector4f(1f, 1f, 1f, 1f);
     private static final Vector3f MODEL_OFFSET = new Vector3f();
     private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
-    //new
+    //block groups
+    private static List<BlockGroup> cachedGroups = new ArrayList<>();
+    private static boolean blockGroupsDirty = true;
+    public static long time = 0;
+
     private static final RenderPipeline BLOCKS_RENDER = RenderPipelines.register(RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath(References.MOD_ID, "pipeline/box")).withDepthStencilState(Optional.empty())
             .build()
@@ -54,6 +60,7 @@ public class RenderUtil {
     public static void render(LevelRenderContext context) {
         if(!Config.Generic.MAIN_RENDER.getBooleanValue()) return;
         if(Minecraft.getInstance().gui.hud.isHidden()) return;
+        long currentTimeMillis = System.nanoTime();
         BlockArea scanRange = Scan.getArea();
         if(scanRange != null){
             for (int i = 0; i < scanRange.size(); i++) {
@@ -68,15 +75,6 @@ public class RenderUtil {
 //            }
         }
 
-/*        //test render process scheduler
-        if(Config.Generic.RENDER_PROCESS_QUEUE.getBooleanValue()){
-            if (!ChunkScheduler.getChunkQueue().isEmpty()){
-                Queue<ChunkPos> queue = ChunkScheduler.getChunkQueue();
-                queue.forEach(chunkPos -> {
-                    //renderAreaEdges(context, chunkPos.getStartPos(), chunkPos.getStartPos().add(16,100,16));
-                });
-            }
-        }*/
 
         if(!renderChunksList.isEmpty() || !renderBlocksList.isEmpty()){
             try {
@@ -95,6 +93,7 @@ public class RenderUtil {
             }
 
         }
+        time = System.nanoTime() - currentTimeMillis;
     }
 
 
@@ -152,40 +151,52 @@ public class RenderUtil {
             }
 
         }
-
-
-        for (BlockPos pos : renderBlocksList) {
-            double relX = pos.getX() + 0.5 - camera.x;
-            double relY = pos.getY() + 0.5 - camera.y;
-            double relZ = pos.getZ() + 0.5 - camera.z;
-
-            double distXZ = Math.sqrt(relX * relX + relZ * relZ);
-            double distance = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
-
-            if (checkDistance && distXZ > maxDistance) {
-                continue;
+        if(Config.Generic.GROUP_RENDER.getBooleanValue()){
+            if(blockGroupsDirty){
+                blockGroupsDirty = false;
+                cachedGroups = ConnectedBlockFinder.findGroups(renderBlocksList);
             }
-            double dot = (relX * lookDirection.x + relY * lookDirection.y + relZ * lookDirection.z) / distance;
-            if (dot < -0.2) {
-                continue;
-            }
+            for (int i = 0; i < cachedGroups.size(); i ++) {
+                double relX = cachedGroups.get(i).centerX + 0.5 - camera.x;
+                double relZ = cachedGroups.get(i).centerZ + 0.5 - camera.z;
 
-            //LOD
-            if (distXZ < (double) Config.Generic.LOD1.getIntegerValue()) {
-                newRenderFilledBox(matrices.last().pose(),
-                        pos.getX(), pos.getY(), pos.getZ(),
-                        pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1,
-                        camera, color);
-            } else if (distXZ < Config.Generic.LOD2.getIntegerValue()) {
-                addMediumDetailCube(matrices.last().pose(),  pos.getX(), pos.getY(), pos.getZ(),
-                        pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1, camera, color);
-            } else if (distXZ < Config.Generic.LOD2_HORIZON.getIntegerValue()) {
-                addBillboardLOD(matrices.last().pose(),  pos.getX(), pos.getY(), pos.getZ(), camera, color, 1, 1);
-            } else if (!Config.Generic.LOD2_HUD.getBooleanValue() && (Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue() < 0 || distXZ < Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue())) {
-                addBillboardLOD(matrices.last().pose(),  pos.getX(), camera.y, pos.getZ(), camera, color, 2, 5);
+                double distXZ = Math.sqrt(relX * relX + relZ * relZ);
+
+                if (distXZ < (double) Config.Generic.LOD2_HORIZON.getIntegerValue()) {
+                    buildGroupMesh(matrices.last().pose(), cachedGroups.get(i), camera, color);
+                } else if (!Config.Generic.LOD2_HUD.getBooleanValue() && (maxDistance < 0 || distXZ < maxDistance)) {
+                    addBillboardLOD(matrices.last().pose(), cachedGroups.get(i).centerX, camera.y, cachedGroups.get(i).centerZ, camera, color, 2, 5);
+                }
+            }
+        }else{
+            for (BlockPos pos : renderBlocksList) {
+                double relX = pos.getX() + 0.5 - camera.x;
+                double relY = pos.getY() + 0.5 - camera.y;
+                double relZ = pos.getZ() + 0.5 - camera.z;
+
+                double distXZ = Math.sqrt(relX * relX + relZ * relZ);
+                double distance = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
+
+                if (checkDistance && distXZ > maxDistance) {
+                    continue;
+                }
+                double dot = (relX * lookDirection.x + relY * lookDirection.y + relZ * lookDirection.z) / distance;
+                if (dot < -0.2) {
+                    continue;
+                }
+
+                //LOD
+                if (distXZ < (double) Config.Generic.LOD1.getIntegerValue()) {
+                    newRenderFilledBox(matrices.last().pose(), pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1, camera, color);
+                } else if (distXZ < Config.Generic.LOD2.getIntegerValue()) {
+                    addMediumDetailCube(matrices.last().pose(), pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1, camera, color);
+                } else if (distXZ < Config.Generic.LOD2_HORIZON.getIntegerValue()) {
+                    addBillboardLOD(matrices.last().pose(), pos.getX(), pos.getY(), pos.getZ(), camera, color, 1, 1);
+                } else if (!Config.Generic.LOD2_HUD.getBooleanValue() && (maxDistance < 0 || distXZ < maxDistance)) {
+                    addBillboardLOD(matrices.last().pose(), pos.getX(), camera.y, pos.getZ(), camera, color, 2, 5);
+                }
             }
         }
-
     }
 
     private static Vec3 getLookDirection(Quaternionf orientation) {
@@ -194,9 +205,7 @@ public class RenderUtil {
         return new Vec3(forward.x, forward.y, forward.z);
     }
 
-    private static void addMediumDetailCube(Matrix4fc matrix,
-                                            double x1, double y1, double z1, double x2, double y2, double z2,
-                                            Vec3 camera, Color4f color) {
+    private static void addMediumDetailCube(Matrix4fc matrix, double x1, double y1, double z1, double x2, double y2, double z2, Vec3 camera, Color4f color) {
         float rx1 = (float)(x1 - camera.x);
         float ry1 = (float)(y1 - camera.y);
         float rz1 = (float)(z1 - camera.z);
@@ -212,6 +221,69 @@ public class RenderUtil {
         buffer.addVertex(matrix, rx1, ry1, rz2).setColor(color.r, color.g, color.b, color.a);
         buffer.addVertex(matrix, rx1, ry2, rz2).setColor(color.r, color.g, color.b, color.a);
         buffer.addVertex(matrix, rx2, ry2, rz1).setColor(color.r, color.g, color.b, color.a);
+
+    }
+
+    public static void buildGroupMesh(Matrix4fc positionMatrix, BlockGroup group, Vec3 camera, Color4f color) {
+        for (BlockPos pos : group.blocks) {
+            int x = pos.getX();
+            int y = pos.getY();
+            int z = pos.getZ();
+
+            boolean drawUp    = !group.blocks.contains(pos.above());
+            boolean drawDown  = !group.blocks.contains(pos.below());
+            boolean drawNorth = !group.blocks.contains(pos.north());
+            boolean drawSouth = !group.blocks.contains(pos.south());
+            boolean drawEast  = !group.blocks.contains(pos.east());
+            boolean drawWest  = !group.blocks.contains(pos.west());
+
+            addBoxFaces(positionMatrix, x, y, z, camera, color, drawUp, drawDown, drawNorth, drawSouth, drawEast, drawWest);
+        }
+    }
+
+    private static void addBoxFaces(Matrix4fc positionMatrix, int x, int y, int z, Vec3 camera, Color4f color, boolean up, boolean down, boolean north, boolean south, boolean east, boolean west) {
+
+        if(up){
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        }
+
+        if(down){
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        }
+
+        if(north){
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        }
+
+        if(south){
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        }
+
+        if(west){
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        }
+
+        if(east){
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        }
 
     }
 
@@ -368,7 +440,6 @@ public class RenderUtil {
                 )
         );
 
-        // 4. Рендер-пасс
         try (RenderPass renderPass = RenderSystem.getDevice()
                 .createCommandEncoder()
                 .createRenderPass(
@@ -407,12 +478,23 @@ public class RenderUtil {
         renderChunksList.clear();
     }
 
-    
-    public static void addAllRenderBlocks(HashSet<BlockPos> blocks) {
+    public static void onDataUpdated() {
+        blockGroupsDirty = true;
+    }
+
+
+    public static void updateAll(HashSet<BlockPos> blocks, HashSet<ChunkPos> chunks){
+        if(Config.Generic.MAIN_RENDER.getBooleanValue()){
+            renderBlocksList.addAll(blocks);
+            renderChunksList.addAll(chunks);
+        }
+    }
+
+    /*public static void addAllRenderBlocks(HashSet<BlockPos> blocks) {
         if(Config.Generic.MAIN_RENDER.getBooleanValue()) renderBlocksList.addAll(blocks);
     }
     public static void addAllRenderChunks(HashSet<ChunkPos> chunkPos) {
         if(Config.Generic.MAIN_RENDER.getBooleanValue()) renderChunksList.addAll(chunkPos);
-    }
+    }*/
 
 }

@@ -12,7 +12,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.CommonColors;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -39,7 +38,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
     private final WhitelistItem createdWhitelistItem = new WhitelistItem(null, null, null, null);
     private Button addToWhitelistBtn;
     private static final List<String> waterloggedValues = List.of("true", "false");
-    public static List<String> pistonBehaviorValues = Arrays.stream(Scan.PistonBehavior.values()).map(Enum::toString).toList();
+    public static final List<String> pistonBehaviorValues = Arrays.stream(Scan.PistonBehavior.values()).map(Enum::toString).toList();
     private static final List<String> BLOCK_IDS = BuiltInRegistries.BLOCK.keySet()
             .stream()
             .map(Identifier::toString)
@@ -52,8 +51,9 @@ public class WhitelistEditorScreen extends ScreenPlus {
 
     private ToggelableWidgedDropDownList<String> waterloggedWidget;
     private ToggelableWidgedDropDownList<String> pistonBehaviorWidget;
-    private ToggelableWidgedDropDownList<String> comparisonOperatorsWidget;
-    private ToggelableWidgedDropDownList<String> equalsOperatorsWidget;
+    private ToggelableWidgedDropDownList<String> blastResistanceComparisonOperatorsWidget;
+    private ToggelableWidgedDropDownList<String> blockEqualsOperatorsWidget;
+    private ToggelableWidgedDropDownList<String> pistonEqualsOperatorsWidget;
     private EditBox blastResistanceValue;
 
     protected WhitelistEditorScreen(Screen parent, String filename, int page) {
@@ -81,8 +81,13 @@ public class WhitelistEditorScreen extends ScreenPlus {
         int y = 30;
 
         //block input
-        addRenderableWidget(new StringWidget(30, y, 120, 20, Component.literal("Block"), font));
-        blockInput = new EditBox(font, 130, y, 100, 20, Component.empty());
+        addRenderableWidget(new StringWidget(30, y, 60, 20, Component.literal("Block"), font));
+        blockEqualsOperatorsWidget = new ToggelableWidgedDropDownList<>(90, y, 30, 20, 60, 2, BlockMatcher.EQUALS_OPERATORS);
+        blockEqualsOperatorsWidget.setZLevel(100);
+        blockEqualsOperatorsWidget.setSelectedEntry("=");
+        addWidget(blockEqualsOperatorsWidget);
+
+        blockInput = new EditBox(font, 130, y, 130, 20, Component.empty());
         blockInput.setMaxLength(256);
         blockInput.setResponder(this::onBlockTextChanged);
         addRenderableWidget(blockInput);
@@ -102,9 +107,9 @@ public class WhitelistEditorScreen extends ScreenPlus {
         y+=rowHeight;
         //pistonBehavior
         addRenderableWidget(new StringWidget(30, y, 120, 20, Component.literal("Piston behavior"), font));
-        equalsOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 60, 2, BlockMatcher.EQUALS_OPERATORS);
-        equalsOperatorsWidget.setZLevel(100);
-        addWidget(equalsOperatorsWidget);
+        pistonEqualsOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 60, 2, BlockMatcher.EQUALS_OPERATORS);
+        pistonEqualsOperatorsWidget.setZLevel(100);
+        addWidget(pistonEqualsOperatorsWidget);
         pistonBehaviorWidget = new ToggelableWidgedDropDownList<>(190, y, 70, 20, 60, 2, pistonBehaviorValues);
         pistonBehaviorWidget.setZLevel(100);
         addWidget(pistonBehaviorWidget);
@@ -112,9 +117,9 @@ public class WhitelistEditorScreen extends ScreenPlus {
         y+=rowHeight;
         //blastResistance
         addRenderableWidget(new StringWidget(30, y, 120, 20, Component.literal("Blast resistance"), font));
-        comparisonOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 100, 4, BlockMatcher.COMPARISON_OPERATORS);
-        comparisonOperatorsWidget.setZLevel(100);
-        addWidget(comparisonOperatorsWidget);
+        blastResistanceComparisonOperatorsWidget = new ToggelableWidgedDropDownList<>(130, y, 50, 20, 100, 4, BlockMatcher.COMPARISON_OPERATORS);
+        blastResistanceComparisonOperatorsWidget.setZLevel(100);
+        addWidget(blastResistanceComparisonOperatorsWidget);
         blastResistanceValue = new EditBox(font, 190, y, 30, 20, Component.empty());
         blastResistanceValue.setResponder(s -> {
 
@@ -190,7 +195,6 @@ public class WhitelistEditorScreen extends ScreenPlus {
                     }
                 }).bounds(30, 260, 90, 20).build();
         addRenderableWidget(addToWhitelistBtn);
-
     }
 
 
@@ -200,14 +204,14 @@ public class WhitelistEditorScreen extends ScreenPlus {
             add(new WhitelistItem(null, null, ">9", "≠DESTROY"));
         }}, "World eater");
         Whitelist fluidsAndWaterlogged = new Whitelist(new ArrayList<>(){{
-            add(new WhitelistItem(Blocks.LAVA, null, null, null));
-            add(new WhitelistItem(Blocks.WATER, null, null, null));
+            add(new WhitelistItem("=" + BuiltInRegistries.BLOCK.getKey(Blocks.WATER), null, null, null));
+            add(new WhitelistItem("=" + BuiltInRegistries.BLOCK.getKey(Blocks.LAVA), null, null, null));
             add(new WhitelistItem(null, "true", null, null));
         }}, "Fluids and Waterlogged");
         Whitelist quarry = new Whitelist(new ArrayList<>(){{
             add(new WhitelistItem(null, null, null, "=IMMOVABLE"));
             add(new WhitelistItem(null, null, ">9", "≠DESTROY"));
-            Blocks.GLAZED_TERRACOTTA.forEach(block -> add(new WhitelistItem(block, null, null, null)));
+            Blocks.GLAZED_TERRACOTTA.forEach(block -> add(new WhitelistItem("=" + BuiltInRegistries.BLOCK.getKey(block), null, null, null)));
         }}, "Quarry");
 
         list.add(worldEater);
@@ -224,8 +228,8 @@ public class WhitelistEditorScreen extends ScreenPlus {
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         try {
-            if(!blockInput.getValue().isEmpty() && BuiltInRegistries.BLOCK.containsKey(Identifier.parse(blockInput.getValue()))){
-                createdWhitelistItem.block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(blockInput.getValue()));
+            if(blockEqualsOperatorsWidget.getSelectedEntry() != null && !blockInput.getValue().isEmpty() && BuiltInRegistries.BLOCK.containsKey(Identifier.parse(blockInput.getValue()))){
+                createdWhitelistItem.block = blockEqualsOperatorsWidget.getSelectedEntry() + BuiltInRegistries.BLOCK.getKey(BuiltInRegistries.BLOCK.getValue(Identifier.parse(blockInput.getValue())));
             }else createdWhitelistItem.block = null;
         }catch (Exception ignored){}
         //waterlogged
@@ -234,13 +238,13 @@ public class WhitelistEditorScreen extends ScreenPlus {
         }else createdWhitelistItem.waterlogged = null;
 
         //pistonBehavior
-        if(equalsOperatorsWidget.getSelectedEntry() != null && pistonBehaviorWidget.getSelectedEntry() != null){
-            createdWhitelistItem.pistonBehavior = equalsOperatorsWidget.getSelectedEntry() + pistonBehaviorWidget.getSelectedEntry();
+        if(pistonEqualsOperatorsWidget.getSelectedEntry() != null && pistonBehaviorWidget.getSelectedEntry() != null){
+            createdWhitelistItem.pistonBehavior = pistonEqualsOperatorsWidget.getSelectedEntry() + pistonBehaviorWidget.getSelectedEntry();
         }else createdWhitelistItem.pistonBehavior = null;
 
         //blast resistance
-        if(comparisonOperatorsWidget.getSelectedEntry() != null && !blastResistanceValue.getValue().isEmpty()){
-            createdWhitelistItem.blastResistance = comparisonOperatorsWidget.getSelectedEntry() + blastResistanceValue.getValue();
+        if(blastResistanceComparisonOperatorsWidget.getSelectedEntry() != null && !blastResistanceValue.getValue().isEmpty()){
+            createdWhitelistItem.blastResistance = blastResistanceComparisonOperatorsWidget.getSelectedEntry() + blastResistanceValue.getValue();
         }else createdWhitelistItem.blastResistance = null;
 
         //borders
@@ -331,7 +335,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
             return;
         }
 
-        Block block = parseBlock(text);
+        String block = parseBlock(text);
         createdWhitelistItem.block = block;
         blockInput.setTextColor(block != null ? 0xFF55FF55 : 0xFFFFFFFF);
 
@@ -360,7 +364,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         return s.trim().toLowerCase(Locale.ROOT).replace(' ', '_');
     }
     @Nullable
-    private Block parseBlock(String raw) {
+    private String parseBlock(String raw) {
         String normalized = normalize(raw);
 
         if (normalized.isEmpty()) {
@@ -374,7 +378,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         }
 
         if (id != null && BuiltInRegistries.BLOCK.containsKey(id)) {
-            return BuiltInRegistries.BLOCK.getValue(id);
+            return BuiltInRegistries.BLOCK.getValue(id).toString();
         }
 
         return null;
