@@ -40,6 +40,7 @@ public class Config implements IConfigHandler {
         public static final ConfigInteger LOD2 = new ConfigInteger("LOD2", 50).apply(GENERIC_KEY);
         public static final ConfigInteger LOD2_HORIZON = new ConfigInteger("LOD2_horizon", 100).apply(GENERIC_KEY);
         public static final ConfigBoolean LOD2_HUD = new ConfigBoolean("LOD2_hud", true).apply(GENERIC_KEY);
+        public static final ConfigFloat LOD2_HUD_TRANSPARENCY = new ConfigFloat("LOD2_hud_transparency", 1.0f, 0.0f, 1.0f).apply(GENERIC_KEY);
         public static final ConfigBoolean GROUP_RENDER = new ConfigBoolean("group_render", false).apply(GENERIC_KEY);
 
         public static final ConfigInteger PROCESS_COOLDOWN = new ConfigInteger("processCooldown", 10, 1, 100).apply(GENERIC_KEY);
@@ -72,6 +73,7 @@ public class Config implements IConfigHandler {
                 LOD2,
                 LOD2_HORIZON,
                 LOD2_HUD,
+                LOD2_HUD_TRANSPARENCY,
                 GROUP_RENDER,
 
                 SPLITTER,

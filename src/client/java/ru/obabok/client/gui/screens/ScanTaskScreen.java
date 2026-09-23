@@ -1,6 +1,7 @@
 package ru.obabok.client.gui.screens;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import fi.dy.masa.malilib.util.input.ScanCodes;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
@@ -17,7 +18,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.CommonColors;
-import org.lwjgl.glfw.GLFW;
+import net.minecraft.util.Util;
+import org.lwjgl.sdl.SDLScancode;
 import ru.obabok.client.Scan;
 import ru.obabok.client.gui.widgets.ToggelableWidgedDropDownList;
 import ru.obabok.common.model.BlockArea;
@@ -410,18 +412,21 @@ public class ScanTaskScreen extends ScreenPlus {
     }
 
     public static boolean hasControlDown() {
-        return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)
-                  || InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL);
+        return Util.getPlatform() == Util.OS.OSX
+                ? InputConstants.isKeyDown(SDLScancode.SDL_SCANCODE_LGUI)
+                || InputConstants.isKeyDown(SDLScancode.SDL_SCANCODE_RGUI)
+                : InputConstants.isKeyDown(SDLScancode.SDL_SCANCODE_LCTRL)
+                || InputConstants.isKeyDown(SDLScancode.SDL_SCANCODE_RCTRL);
     }
 
     public static boolean hasShiftDown() {
-        return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
-                || InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT);
+        return InputConstants.isKeyDown(ScanCodes.SCAN_LEFT_SHIFT)
+                || InputConstants.isKeyDown(ScanCodes.SCAN_RIGHT_SHIFT);
     }
 
     public static boolean hasAltDown() {
-        return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_ALT)
-                || InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_ALT);
+        return InputConstants.isKeyDown(SDLScancode.SDL_SCANCODE_LALT)
+                || InputConstants.isKeyDown(SDLScancode.SDL_SCANCODE_RALT);
     }
 
     private void updateRange() {

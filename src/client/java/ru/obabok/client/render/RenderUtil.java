@@ -1,18 +1,21 @@
 package ru.obabok.client.render;
 
-import com.mojang.blaze3d.IndexType;
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.RenderPass;
+
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.pipeline.IndexType;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import fi.dy.masa.malilib.util.data.Color4f;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
@@ -431,28 +434,29 @@ public class RenderUtil {
             indexType = shapeIndexBuffer.type();
         }
 
-        GpuBufferSlice[] transforms = RenderSystem.getDynamicUniforms().writeTransforms(
-                new DynamicUniforms.Transform(
+        GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().writeTransform(
                         RenderSystem.getModelViewMatrixCopy(),
                         COLOR_MODULATOR,
                         MODEL_OFFSET,
                         TEXTURE_MATRIX
-                )
         );
+        RenderTarget mainTarget = client.gameRenderer.mainRenderTarget();
+        GpuTextureView colorTexture = mainTarget.getColorTextureView();
+        assert colorTexture != null;
 
         try (RenderPass renderPass = RenderSystem.getDevice()
                 .createCommandEncoder()
                 .createRenderPass(
-                        () -> "mod_render_pass",
-                        client.gameRenderer.mainRenderTarget().getColorTextureView(),
+                        () -> References.MOD_ID  + " render pipeline",
+                        colorTexture,
                         Optional.empty(),
-                        client.gameRenderer.mainRenderTarget().getDepthTextureView(),
+                        mainTarget.getDepthTextureView(),
                         OptionalDouble.empty()
                 )) {
 
+            renderPass.setPipeline(RenderSystem.getCompiledPipeline(pipeline));
             RenderSystem.bindDefaultUniforms(renderPass);
-            renderPass.setPipeline(pipeline);
-            renderPass.setUniform("DynamicTransforms", transforms[0]);
+            renderPass.setUniform("DynamicTransforms", transforms);
 
             renderPass.setVertexBuffer(0, vertexBuffer.slice());
             renderPass.setIndexBuffer(indices, indexType);
