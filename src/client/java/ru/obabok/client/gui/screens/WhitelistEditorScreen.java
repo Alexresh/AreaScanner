@@ -15,7 +15,7 @@ import net.minecraft.util.CommonColors;
 import net.minecraft.world.level.block.Blocks;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLScancode;
 import ru.obabok.client.Scan;
 import ru.obabok.client.gui.widgets.SuggestionListWidget;
 import ru.obabok.client.gui.widgets.ToggelableWidgedDropDownList;
@@ -260,23 +260,23 @@ public class WhitelistEditorScreen extends ScreenPlus {
     @Override
     public boolean keyPressed(@NonNull KeyEvent event) {
         if (blockSuggestions != null && blockSuggestions.visible) {
-            if (event.key() == GLFW.GLFW_KEY_DOWN) {
+            if (event.key() == SDLScancode.SDL_SCANCODE_DOWN) {
                 blockSuggestions.selectRelative(1);
                 return true;
             }
 
-            if (event.key() == GLFW.GLFW_KEY_UP) {
+            if (event.key() == SDLScancode.SDL_SCANCODE_UP) {
                 blockSuggestions.selectRelative(-1);
                 return true;
             }
 
-            if (event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER || event.key() == GLFW.GLFW_KEY_TAB) {
+            if (event.key() == SDLScancode.SDL_SCANCODE_KP_ENTER || event.key() == SDLScancode.SDL_SCANCODE_RETURN || event.key() == SDLScancode.SDL_SCANCODE_RETURN2 || event.key() == SDLScancode.SDL_SCANCODE_KP_TAB || event.key() == SDLScancode.SDL_SCANCODE_TAB) {
                 if (blockSuggestions.confirmSelected()) {
                     return true;
                 }
             }
 
-            if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+            if (event.key() == SDLScancode.SDL_SCANCODE_ESCAPE) {
                 blockSuggestions.hide();
                 return true;
             }

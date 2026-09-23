@@ -69,9 +69,17 @@ public class AreaScannerClient implements ClientModInitializer {
 			});
 
 			HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(References.MOD_ID, "hud"), HudRender::render);
-			LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(RenderUtil::render);
+			LevelRenderEvents.END_MAIN.register(RenderUtil::render);
 			ChunkScheduler.startProcessing();
 			ClientLifecycleEvents.CLIENT_STOPPING.register(ChunkScheduler::stopProcessing);
 		}
+	}
+	//need to be here because this class no load malilib classes
+	public static boolean shouldUpdateRealtime() {
+		if (AreaScannerClient.isMaliLibLoaded) {
+			//config class not load if isMaliLibLoaded = false and no crash occurred
+			return Config.Generic.REALTIME_UPDATE.getBooleanValue();
+		}
+		return false;
 	}
 }

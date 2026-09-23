@@ -184,13 +184,13 @@ public class BlockMatcher {
                 }
 
                 switch (state.getPistonPushReaction()) {
-                    case BLOCK -> {
+                    case IMMOVEABLE -> {
                         return PistonBehavior.IMMOVABLE;
                     }
-                    case DESTROY -> {
+                    case POPPED -> {
                         return PistonBehavior.DESTROY;
                     }
-                    case PUSH_ONLY -> {
+                    case PUSH -> {
                         return PistonBehavior.NORMAL;
                     }
                 }

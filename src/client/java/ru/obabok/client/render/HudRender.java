@@ -328,7 +328,7 @@ public class HudRender {
         int screenHeight = mc.getWindow().getGuiScaledHeight();
 
         if(Config.Generic.LOD2_HUD.getBooleanValue()){
-            int color = Config.Generic.SELECTED_BLOCKS_COLOR.getIntegerValue();
+            int color = Config.Generic.SELECTED_BLOCKS_COLOR.getColor().withAlpha(Config.Generic.LOD2_HUD_TRANSPARENCY.getFloatValue()).getIntValue();
             for (int i = 0; i < preparedBlockClusters.size(); i++) {
                 BlockPos pos = preparedBlockClusters.get(i);
                 renderDot(guiGraphicsExtractor, camera, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, screenWidth, screenHeight, color);
