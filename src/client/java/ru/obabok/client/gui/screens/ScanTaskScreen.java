@@ -368,7 +368,7 @@ public class ScanTaskScreen extends ScreenPlus {
         for (CoordButton entry : coordButtons) {
             if (entry.button.isMouseOver(event.x(), event.y())) {
                 playClickSound();
-                int amount = (event.button() == 0) ? 1 : (event.button() == 1 ? -1 : 0);
+                int amount = (event.button() == 1) ? 1 : (event.button() == 3 ? -1 : 0);
                 if (amount != 0) {
                     applyNudge(entry.field, amount);
                     return true;

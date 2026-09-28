@@ -72,7 +72,7 @@ public class SuggestionListWidget extends AbstractWidget {
 
     @Override
     public boolean mouseClicked(@NonNull MouseButtonEvent event, boolean doubleClick) {
-        if (!visible || suggestions.isEmpty() || event.button() != 0) {
+        if (!visible || suggestions.isEmpty() || event.button() != 1) {
             return false;
         }
 

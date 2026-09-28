@@ -164,7 +164,7 @@ public class MaterialListScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
-        if (event.button() == 0 && isScrollBarHovered(event.x(), event.y())) {
+        if (event.button() == 1 && isScrollBarHovered(event.x(), event.y())) {
             isDraggingScrollBar = true;
             lastMouseY = event.y();
             return true;
@@ -191,7 +191,7 @@ public class MaterialListScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (event.button() == 0) {
+        if (event.button() == 1) {
             isDraggingScrollBar = false;
         }
         return super.mouseReleased(event);
