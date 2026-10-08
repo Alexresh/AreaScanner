@@ -4,6 +4,7 @@ package ru.obabok.common.model;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 
 public class WhitelistItem {
     public String block;
@@ -29,24 +30,31 @@ public class WhitelistItem {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("[");
-        if(block != null){
-            builder.append("block:").append(block);
+        String nl = System.lineSeparator();
+
+        StringJoiner joiner = new StringJoiner(
+                "," + nl + "  ",
+                "{" + nl + "  ",
+                nl + "}"
+        ).setEmptyValue("{}");
+
+        if (block != null) {
+            joiner.add("block: " + block);
         }
-        builder.append(" and ");
-        if(waterlogged != null){
-            builder.append("waterlogged:").append(waterlogged);
+
+        if (waterlogged != null) {
+            joiner.add("waterlogged: " + waterlogged);
         }
-        builder.append(" and ");
-        if(blastResistance != null){
-            builder.append("blastResistance:").append(blastResistance);
+
+        if (pistonBehavior != null) {
+            joiner.add("pistonBehavior: " + pistonBehavior);
         }
-        builder.append(" and ");
-        if(pistonBehavior != null){
-            builder.append("pistonBehavior:").append(pistonBehavior);
+
+        if (blastResistance != null) {
+            joiner.add("blastResistance: " + blastResistance);
         }
-        builder.append("]");
-        return builder.toString();
+
+        return joiner.toString();
     }
 
     @Override

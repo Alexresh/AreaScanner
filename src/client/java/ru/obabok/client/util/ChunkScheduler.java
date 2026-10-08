@@ -37,14 +37,14 @@ public class ChunkScheduler {
             if (!isRunning) return;
             try {
                 Minecraft mc = Minecraft.getInstance();
-                if (mc.level == null) {
-                    return;
-                }
+
+                if (mc.level == null) return;
+
                 ChunkPos chunkPos = chunkQueue.poll();
                 if (chunkPos != null && Minecraft.getInstance().level != null && Minecraft.getInstance().level.getChunkSource().getChunk(chunkPos.x(), chunkPos.z(), ChunkStatus.FULL, false) != null) {
                     Scan.processChunk(Minecraft.getInstance().level, chunkPos);
                 }
-            }catch (Exception e){
+            }catch (Throwable e){
                 References.LOGGER.error(e.getMessage());
             }
 
@@ -57,12 +57,10 @@ public class ChunkScheduler {
                 if(Scan.renderDirty){
                     RenderUtil.clearRender();
                     RenderUtil.updateAll(Scan.selectedBlocks, Scan.unloadedChunks);
-                    //RenderUtil.addAllRenderBlocks(Scan.selectedBlocks);
-                    //RenderUtil.addAllRenderChunks(Scan.unloadedChunks);
                     Scan.renderDirty = false;
                     RenderUtil.onDataUpdated();
                 }
-            }catch (Exception ignored){}
+            }catch (Throwable ignored){}
 
         }, 0, 500, TimeUnit.MILLISECONDS);
 

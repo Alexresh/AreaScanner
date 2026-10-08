@@ -24,16 +24,16 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Scan {
-    public static HashSet<BlockPos> selectedBlocks = new HashSet<>();
-    public static HashSet<ChunkPos> unloadedChunks = new HashSet<>();
-    private static Whitelist whitelist;
-    private static BlockArea area;
-    private static boolean processing = false;
+    public static volatile HashSet<BlockPos> selectedBlocks = new HashSet<>();
+    public static volatile HashSet<ChunkPos> unloadedChunks = new HashSet<>();
+    private static volatile Whitelist whitelist;
+    private static volatile BlockArea area;
+    private static volatile boolean processing = false;
     private static boolean remoteProcessing = false;
-    private static long remoteChunkProcessedCounter;
+    private static volatile long remoteChunkProcessedCounter;
     private static long allChunksCounter;
-    private static String currentFilename;
-    public static boolean renderDirty = true;
+    private static volatile String currentFilename;
+    public static volatile boolean renderDirty = true;
 
     public enum PistonBehavior {
             NORMAL,
@@ -44,9 +44,8 @@ public class Scan {
 
     public static int executeAsync(ClientLevel world, BlockArea _range, String filename){
         stopScan();
-        processing = true;
         area = _range;
-        if (world == null) return 0;
+        if (world == null || _range == null || _range.isEmpty()) return 0;
         currentFilename = filename;
         whitelist = WhitelistManager.loadData(currentFilename);
         if(whitelist == null){
@@ -56,6 +55,7 @@ public class Scan {
             stopScan();
             return 0;
         }
+        processing = true;
 
         HashSet<ChunkPos> affectedChunks = area.getAffectedChunks();
         for (ChunkPos chunkPos : affectedChunks){
@@ -98,6 +98,7 @@ public class Scan {
         area = null;
         currentFilename = null;
         remoteProcessing = false;
+        whitelist = null;
         ChunkScheduler.clearQueue();
         RenderUtil.clearRender();
         MaterialListScreen.clear();
@@ -180,7 +181,7 @@ public class Scan {
 
         updateChunk(chunkPos, world);
 
-        checkProcessing();
+        checkFinished();
         if (processing) {
             for (BlockBox box : relevantBoxes) {
                 int localMinX = Math.max(0, box.min().getX() - (chunkPos.x() << 4));
@@ -202,7 +203,7 @@ public class Scan {
         if(unloadedChunks.remove(chunkPos)){
             renderDirty = true;
         }
-        checkProcessing();
+        checkFinished();
     }
 
     //deletes blocks from selected blocks
@@ -220,14 +221,18 @@ public class Scan {
         }
     }
 
-    private static void checkProcessing(){
-        if(processing && selectedBlocks.isEmpty() && unloadedChunks.isEmpty()) {
-            if(Minecraft.getInstance().player != null){
-                Minecraft.getInstance().player.sendSystemMessage(Component.literal("Scan finished"));
-                Minecraft.getInstance().player.playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, 1, 1);
+    private static void checkFinished(){
+        if(!processing) return;
+        if(!selectedBlocks.isEmpty() || !unloadedChunks.isEmpty()) return;
+        if(!ChunkScheduler.getChunkQueue().isEmpty()) return;
+        stopScan();
+        Minecraft mc = Minecraft.getInstance();
+        mc.execute(() -> {
+            if(mc.player != null){
+                mc.player.sendSystemMessage(Component.literal("Scan finished"));
+                mc.player.playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, 1, 1);
             }
-            stopScan();
-        }
+        });
     }
 
     //adds blocks to selected blocks
@@ -241,6 +246,6 @@ public class Scan {
             MaterialListScreen.addBlock(blockState.getBlock(), 1);
         }
 
-        checkProcessing();
+        //checkFinished();
     }
 }
