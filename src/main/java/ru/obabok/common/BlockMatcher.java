@@ -58,11 +58,11 @@ public class BlockMatcher {
                         References.LOGGER.warn("invalid blastResistance format: {}", whitelistItem.blastResistance);
                         return false;
                     }
-                    if (!isParsableToInt(numberPart)) {
+                    if (!isParsableToFloat(numberPart)) {
                         References.LOGGER.warn("invalid number in blastResistance: {}", numberPart);
                         return false;
                     }
-                    int threshold = Integer.parseInt(numberPart);
+                    float threshold = Float.parseFloat(numberPart);
 
                     float actualResistance = resistanceOpt.get();
                     boolean matches = switch (operator) {
@@ -163,6 +163,16 @@ public class BlockMatcher {
         if (str == null || str.isEmpty()) return false;
         try {
             Integer.parseInt(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private static boolean isParsableToFloat(String str) {
+        if (str == null || str.isEmpty()) return false;
+        try {
+            Float.parseFloat(str);
             return true;
         } catch (NumberFormatException e) {
             return false;
