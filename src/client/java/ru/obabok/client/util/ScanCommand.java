@@ -67,6 +67,21 @@ public class ScanCommand {
                                         .executes(ctx -> startScan(ctx,
                                                 StringArgumentType.getString(ctx, "whitelist"),
                                                 StringArgumentType.getString(ctx, "share_name"))))))
+                .then(ClientCommands.literal("startFast")
+                        .then(ClientCommands.argument("from", CBlockPosArgument.blockPos())
+                                .then(ClientCommands.argument("to", CBlockPosArgument.blockPos())
+                                        .then(ClientCommands.argument("whitelist", StringArgumentType.string())
+                                                .suggests(new FileSuggestionProvider())
+                                                .executes(ctx -> {
+                                                    addRange(ctx, CBlockPosArgument.getBlockPos(ctx, "from"), CBlockPosArgument.getBlockPos(ctx, "to"));
+                                                    return startScan(ctx, StringArgumentType.getString(ctx, "whitelist"), null);
+                                                })
+                                                .then(ClientCommands.argument("share_name", StringArgumentType.string())
+                                                        .executes(ctx -> {
+                                                            addRange(ctx, CBlockPosArgument.getBlockPos(ctx, "from"), CBlockPosArgument.getBlockPos(ctx, "to"));
+                                                            return startScan(ctx, StringArgumentType.getString(ctx, "whitelist"), StringArgumentType.getString(ctx, "share_name"));
+                                                        })))))
+                )
 
                 .then(ClientCommands.literal("stop").executes(context -> {
                     if (Scan.isRemoteProcessing()) ClientNetwork.stopScan();

@@ -108,7 +108,7 @@ public class BlockMatcher {
                         References.LOGGER.warn("invalid number in blastResistance: {}", numberPart);
                         return false;
                     }
-                    int threshold = Integer.parseInt(numberPart);
+                    float threshold = Float.parseFloat(numberPart);
 
                     float actualResistance = resistanceOpt.get();
                     boolean matches = switch (operator) {
