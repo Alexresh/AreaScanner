@@ -154,7 +154,7 @@ public class FastScanJob {
                 if (nbt.isPresent()) {
                     readyChunks.enqueue(pos);
                 } else {
-                    stop("Chunk " + new ChunkPos(pos) + " missing", true);
+                    stop("Chunk " + new ChunkPos(pos) + " is missing", true);
                     return;
                 }
             } catch (Exception e) {
@@ -181,7 +181,7 @@ public class FastScanJob {
                 long pos = chunkCursor.nextLong();
                 CompletableFuture<Optional<CompoundTag>> future = storage.loadAsync(new ChunkPos(pos));
                 pendingNbt.put(pos, future);
-                activeNbtReads.add(pos); // Запоминаем, что этот чанк в работе
+                activeNbtReads.add(pos);
                 scheduled++;
         }
     }
@@ -201,7 +201,7 @@ public class FastScanJob {
                 return;
             }
             scanChunk(worldChunk, chunkPos, deltaBuffer);
-            selectedBlocks.addAll(deltaBuffer);
+
             for (int i = 0; i < deltaBuffer.size(); i++) {
                 pendingDeltaTypes.enqueue(1);
                 pendingDeltaPos.enqueue(deltaBuffer.getLong(i));
@@ -219,20 +219,16 @@ public class FastScanJob {
 
     private void sendDeltaDataPackets() {
         while (!pendingDeltaTypes.isEmpty()) {
-            // Берем первый тип и позицию
             int currentType = pendingDeltaTypes.dequeueInt();
             boolean isAdd = (currentType == 1);
 
             deltaBuffer.clear();
             deltaBuffer.add(pendingDeltaPos.dequeueLong());
 
-            // Собираем пачку, пока типы совпадают
             while (!pendingDeltaTypes.isEmpty() && deltaBuffer.size() < ServerScanConfig.getMaxDeltaPositionsPerPacket()) {
-                // "Подсматриваем" тип следующего элемента
                 int nextType = pendingDeltaTypes.firstInt();
                 if (nextType != currentType) break;
 
-                // Если тип такой же, забираем его из обеих очередей
                 pendingDeltaTypes.dequeueInt();
                 deltaBuffer.add(pendingDeltaPos.dequeueLong());
             }
@@ -287,8 +283,10 @@ public class FastScanJob {
                     pos.set(x, y, z);
                     if (BlockMatcher.matches(whitelist, chunk.getBlockState(pos), world, pos)) {
                         long p = pos.asLong();
-                        output.add(p);
-                        materialList.addTo(chunk.getBlockState(pos).getBlock(), 1);
+                        if(selectedBlocks.add(p)){
+                            output.add(p);
+                            materialList.addTo(chunk.getBlockState(pos).getBlock(), 1);
+                        }
                     }
                 }
             }
@@ -346,14 +344,13 @@ public class FastScanJob {
     private void queueDelta(BlockPos pos, boolean add, BlockState oldState, BlockState newState) {
         long posLong = pos.asLong();
         if (add) {
-            selectedBlocks.add(posLong);
+            if(!selectedBlocks.add(posLong)) return;
             materialList.addTo(newState.getBlock(), 1);
         } else {
-            selectedBlocks.remove(posLong);
+            if(!selectedBlocks.remove(posLong)) return;
             materialList.addTo(oldState.getBlock(), -1);
         }
 
-        // Записываем тип (1 или 0) и координаты
         pendingDeltaTypes.enqueue(add ? 1 : 0);
         pendingDeltaPos.enqueue(posLong);
     }
