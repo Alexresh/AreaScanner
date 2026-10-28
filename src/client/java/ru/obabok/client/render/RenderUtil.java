@@ -371,9 +371,6 @@ public class RenderUtil {
         buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
         buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
         buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-
-
-
     }
 
     private static void filledPlane(Matrix4fc positionMatrix, double x1, double z1, double x2, double z2, double y, Vec3 camera, Color4f color){
