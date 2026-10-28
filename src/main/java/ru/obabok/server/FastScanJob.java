@@ -157,7 +157,8 @@ public class FastScanJob {
                 if (nbt.isPresent()) {
                     readyChunks.enqueue(pos);
                 } else {
-                    stop("Chunk " + ChunkPos.fromSectionNode(pos) + " missing", true);
+                    ChunkPos chunkPos = ChunkPos.unpack(pos);
+                    stop("Chunk " + chunkPos.x() + ":" + chunkPos.z() + " is missing", true);
                     return;
                 }
             } catch (Exception e) {
@@ -184,7 +185,7 @@ public class FastScanJob {
                 long pos = chunkCursor.nextLong();
                 CompletableFuture<Optional<CompoundTag>> future = storage.loadAsync(ChunkPos.unpack(pos));
                 pendingNbt.put(pos, future);
-                activeNbtReads.add(pos); // Запоминаем, что этот чанк в работе
+                activeNbtReads.add(pos);
                 scheduled++;
         }
     }
@@ -204,7 +205,7 @@ public class FastScanJob {
                 return;
             }
             scanChunk(worldChunk, chunkPos, deltaBuffer);
-            selectedBlocks.addAll(deltaBuffer);
+
             for (int i = 0; i < deltaBuffer.size(); i++) {
                 pendingDeltaTypes.enqueue(1);
                 pendingDeltaPos.enqueue(deltaBuffer.getLong(i));
@@ -222,20 +223,16 @@ public class FastScanJob {
 
     private void sendDeltaDataPackets() {
         while (!pendingDeltaTypes.isEmpty()) {
-            // Берем первый тип и позицию
             int currentType = pendingDeltaTypes.dequeueInt();
             boolean isAdd = (currentType == 1);
 
             deltaBuffer.clear();
             deltaBuffer.add(pendingDeltaPos.dequeueLong());
 
-            // Собираем пачку, пока типы совпадают
             while (!pendingDeltaTypes.isEmpty() && deltaBuffer.size() < ServerScanConfig.getMaxDeltaPositionsPerPacket()) {
-                // "Подсматриваем" тип следующего элемента
                 int nextType = pendingDeltaTypes.firstInt();
                 if (nextType != currentType) break;
 
-                // Если тип такой же, забираем его из обеих очередей
                 pendingDeltaTypes.dequeueInt();
                 deltaBuffer.add(pendingDeltaPos.dequeueLong());
             }
@@ -272,6 +269,7 @@ public class FastScanJob {
     }
 
     private void scanChunk(ProtoChunk chunk, ChunkPos chunkPos, LongArrayList output) {
+        output.clear();
         List<BlockBox> relevantBoxes = getRelevantBoxes(chunkPos);
         if (relevantBoxes.isEmpty()) return;
 
@@ -297,12 +295,14 @@ public class FastScanJob {
                         pos.set(x, y, z);
                         long p = pos.asLong();
 
-                        if (output.contains(p)) continue;
+                        if (selectedBlocks.contains(p)) continue;
 
                         BlockState state = chunk.getBlockState(pos);
                         if (BlockMatcher.matches(whitelist, state, world, pos)) {
-                            output.add(p);
-                            materialList.addTo(state.getBlock(), 1);
+                            if (selectedBlocks.add(p)) {
+                                output.add(p);
+                                materialList.addTo(state.getBlock(), 1);
+                            }
                         }
                     }
                 }
@@ -378,14 +378,13 @@ public class FastScanJob {
     private void queueDelta(BlockPos pos, boolean add, BlockState oldState, BlockState newState) {
         long posLong = pos.asLong();
         if (add) {
-            selectedBlocks.add(posLong);
+            if(!selectedBlocks.add(posLong)) return;
             materialList.addTo(newState.getBlock(), 1);
         } else {
-            selectedBlocks.remove(posLong);
+            if(!selectedBlocks.remove(posLong)) return;
             materialList.addTo(oldState.getBlock(), -1);
         }
 
-        // Записываем тип (1 или 0) и координаты
         pendingDeltaTypes.enqueue(add ? 1 : 0);
         pendingDeltaPos.enqueue(posLong);
     }
@@ -407,7 +406,6 @@ public class FastScanJob {
         private int current = 0;
 
         public ChunkCursor(BlockArea area) {
-            // Собираем уникальные чанки из всех боксов
             LinkedHashSet<ChunkPos> uniqueChunks = new LinkedHashSet<>();
             for (BlockBox box : area.getBoxes()) {
                 int startX = box.min().getX() >> 4;
