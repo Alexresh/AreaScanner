@@ -5,6 +5,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 import ru.obabok.common.References;
 
 public record ScanChunkSummaryPayload(long jobId, long chunkCount) implements CustomPacketPayload {
@@ -24,7 +25,7 @@ public record ScanChunkSummaryPayload(long jobId, long chunkCount) implements Cu
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

@@ -106,6 +106,7 @@ public class WhitelistSelectorScreen extends Screen {
         return false;
     }
 
+
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         //renderBackground(guiGraphics, mouseX, mouseY, delta);
@@ -113,4 +114,5 @@ public class WhitelistSelectorScreen extends Screen {
 
         super.render(guiGraphics, mouseX, mouseY, delta);
     }
+
 }

@@ -10,10 +10,12 @@ import net.fabricmc.fabric.api.event.client.player.ClientPlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.core.BlockBox;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.ChunkPos;
+import ru.obabok.client.render.HudRender;
+import ru.obabok.client.render.RenderUtil;
+import ru.obabok.common.model.BlockArea;
 import ru.obabok.client.network.ClientNetwork;
 import ru.obabok.client.util.*;
 import ru.obabok.common.References;
@@ -27,6 +29,7 @@ public class AreaScannerClient implements ClientModInitializer {
 			AreaScannerMalilibHelper.initMalilib();
 			ClientNetwork.register();
 			ClientCommandRegistrationCallback.EVENT.register((commandDispatcher, commandRegistryAccess) -> ScanCommand.register(commandDispatcher));
+
 			ClientPlayerBlockBreakEvents.AFTER.register((clientWorld, clientPlayerEntity, blockPos, blockState) ->{
 				if (Scan.isRemoteProcessing()) return;
 				if(Scan.isProcessing()){
@@ -53,22 +56,30 @@ public class AreaScannerClient implements ClientModInitializer {
 			});
 
 			ClientChunkEvents.CHUNK_LOAD.register((clientWorld, worldChunk) -> {
-				BlockBox range = Scan.getRange();
-				if (range != null) {
-					ChunkPos chunkPos = worldChunk.getPos();
-					if (OldUtils.intersectsChunk(range, chunkPos)) {
-						if (Scan.isRemoteProcessing()) return;
-						if(Scan.isProcessing()) {
-							ChunkScheduler.addChunkToProcess(chunkPos);
-						}
-					}
+				BlockArea area = Scan.getArea();
+				if (area == null) return;
+
+				ChunkPos chunkPos = worldChunk.getPos();
+				if (!area.intersectsChunk(chunkPos)) return;
+				if (Scan.isRemoteProcessing()) return;
+
+				if (Scan.isProcessing()) {
+					ChunkScheduler.addChunkToProcess(chunkPos);
 				}
 			});
 
 			HudElementRegistry.addLast(ResourceLocation.fromNamespaceAndPath(References.MOD_ID, "hud"), HudRender::render);
-			WorldRenderEvents.BEFORE_TRANSLUCENT.register(RenderUtil::renderAll);
-			ClientLifecycleEvents.CLIENT_STOPPING.register(ChunkScheduler::stopProcessing);
+			WorldRenderEvents.END_MAIN.register(RenderUtil::render);
 			ChunkScheduler.startProcessing();
+			ClientLifecycleEvents.CLIENT_STOPPING.register(ChunkScheduler::stopProcessing);
 		}
+	}
+	//need to be here because this class no load malilib classes
+	public static boolean shouldUpdateRealtime() {
+		if (AreaScannerClient.isMaliLibLoaded) {
+			//config class not load if isMaliLibLoaded = false and no crash occurred
+			return Config.Generic.REALTIME_UPDATE.getBooleanValue();
+		}
+		return false;
 	}
 }

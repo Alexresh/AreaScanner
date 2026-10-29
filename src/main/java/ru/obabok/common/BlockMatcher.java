@@ -2,7 +2,10 @@ package ru.obabok.common;
 
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -30,13 +33,56 @@ public class BlockMatcher {
         boolean meet = false;
         for (WhitelistItem whitelistItem : whitelist.whitelist) {
             boolean insideMeet = true;
-            if (whitelistItem.block != null && whitelistItem.block != blockState.getBlock()) {
-                insideMeet = false;
+            if (whitelistItem.block != null){
+                String input = whitelistItem.block.trim();
+                String operator = null;
+                String block = null;
+                for (String op : EQUALS_OPERATORS) {
+                    if (input.startsWith(op)) {
+                        operator = op;
+                        block = input.substring(op.length()).trim();
+                        break;
+                    }
+                }
+                //try to fix old whitelist
+                if(operator == null){
+                    operator = "=";
+                    block = input;
+                }
+
+                if (block.isEmpty()) {
+                    References.LOGGER.warn("invalid block format: {}", whitelistItem.block);
+                    insideMeet = false;
+                }
+                try {
+                    if(!block.isEmpty() && BuiltInRegistries.BLOCK.containsKey(ResourceLocation.parse(block))){
+                        Block whitelistBlock = BuiltInRegistries.BLOCK.getValue(ResourceLocation.parse(block));
+                        Block actual = blockState.getBlock();
+                        boolean matches = switch (operator) {
+                            case "=" -> whitelistBlock == actual;
+                            case "≠" -> whitelistBlock != actual;
+                            default -> false;
+                        };
+                        if (!matches) {
+                            insideMeet = false;
+                        }
+                    }
+                } catch (Exception e) {
+                    References.LOGGER.error("Block is corrupted");
+                    insideMeet = false;
+                }
             }
+            /*&& whitelistItem.block != blockState.getBlock()) {
+                insideMeet = false;
+            }*/
 
             if (whitelistItem.waterlogged != null) {
-                boolean waterlogged = blockState.getValue(BlockStateProperties.WATERLOGGED);
-                if (Boolean.parseBoolean(whitelistItem.waterlogged) != waterlogged) {
+                if(blockState.hasProperty(BlockStateProperties.WATERLOGGED)){
+                    boolean waterlogged = blockState.getValue(BlockStateProperties.WATERLOGGED);
+                    if (Boolean.parseBoolean(whitelistItem.waterlogged) != waterlogged) {
+                        insideMeet = false;
+                    }
+                }else{
                     insideMeet = false;
                 }
             }
