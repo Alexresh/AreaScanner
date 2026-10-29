@@ -45,7 +45,7 @@ public class ScanTaskScreen extends ScreenPlus {
     protected ScanTaskScreen(Screen parent) {
         super(Component.literal("Scan task screen"));
         this.parent = parent;
-        if(Minecraft.getInstance().player == null) Minecraft.getInstance().setScreenAndShow(parent);
+        if(Minecraft.getInstance().player == null) Minecraft.getInstance().setScreen(parent);
         BlockArea existing = Scan.getArea();
         if (existing == null || existing.getBoxes().isEmpty()) {
             this.initialBox = new BlockArea(new BlockBox(
@@ -202,7 +202,7 @@ public class ScanTaskScreen extends ScreenPlus {
         addRenderableWidget(shareNameField);
 
         //back button
-        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> minecraft.setScreenAndShow(parent)).bounds( 30, height - 30, 50, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> minecraft.setScreen(parent)).bounds( 30, height - 30, 50, 20).build());
 
         //start button
         startButton = Button.builder(Component.literal("Start scan"), btn -> {
@@ -229,7 +229,7 @@ public class ScanTaskScreen extends ScreenPlus {
                 ClientNetwork.stopScan();
             }
             Scan.stopScan();
-            minecraft.setScreenAndShow(new ScanTaskScreen(parent, box));
+            minecraft.setScreen(new ScanTaskScreen(parent, box));
         }).bounds(180, height - 30, 80, 20).build();
         stopScanBtn.active = Scan.isProcessing() || Scan.isRemoteProcessing();
         addRenderableWidget(stopScanBtn);

@@ -51,7 +51,7 @@ public class WhitelistSelectorScreen extends Screen {
         EditBox newWhitelistField = new EditBox(font, width / 2 - 100, y, 150, 20, Component.empty());
         addRenderableWidget(newWhitelistField);
 
-        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> minecraft.setScreenAndShow(parent))
+        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> minecraft.setScreen(parent))
                 .bounds( 30, height - 30, 80, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("Create"), button -> {
@@ -59,7 +59,7 @@ public class WhitelistSelectorScreen extends Screen {
             if (!name.isEmpty()) {
                 if(WhitelistManager.createWhitelist(name) && minecraft.player != null){
                     minecraft.player.displayClientMessage(Component.literal("Created").withStyle(ChatFormatting.GOLD), true);
-                    minecraft.setScreenAndShow(new WhitelistSelectorScreen(parent, 0));
+                    minecraft.setScreen(new WhitelistSelectorScreen(parent, 0));
                 }
             }
         }).bounds(width / 2 + 55, y, 60, 20).build());
@@ -75,7 +75,7 @@ public class WhitelistSelectorScreen extends Screen {
             addRenderableWidget(Button.builder(Component.literal("❌"), button -> {
                 if(WhitelistManager.deleteWhitelist(filename) && minecraft.player != null) {
                     minecraft.player.displayClientMessage(Component.literal("Deleted").withStyle(ChatFormatting.GOLD), true);
-                    minecraft.setScreenAndShow(new WhitelistSelectorScreen(parent, currentPage));
+                    minecraft.setScreen(new WhitelistSelectorScreen(parent, currentPage));
                 }
             }).bounds(width / 2 + 55, y, 20, 20).build());
 
@@ -84,7 +84,7 @@ public class WhitelistSelectorScreen extends Screen {
         int buttonY = height - 60;
         if (currentPage > 0) {
             addRenderableWidget(Button.builder(Component.literal("< Prev"), btn ->{
-                minecraft.setScreenAndShow(new WhitelistSelectorScreen(parent, currentPage - 1));
+                minecraft.setScreen(new WhitelistSelectorScreen(parent, currentPage - 1));
             }).bounds(width / 2 - 120, buttonY, 80, 20).build());
         }
 
@@ -95,7 +95,7 @@ public class WhitelistSelectorScreen extends Screen {
 
         if (to < whitelistFiles.size()) {
             addRenderableWidget(Button.builder(Component.literal("Next >"), btn ->{
-                    minecraft.setScreenAndShow(new WhitelistSelectorScreen(parent, currentPage + 1));
+                    minecraft.setScreen(new WhitelistSelectorScreen(parent, currentPage + 1));
             }).bounds(width / 2 + 40, buttonY, 80, 20).build());
         }
 
