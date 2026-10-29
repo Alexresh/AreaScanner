@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import ru.obabok.client.Scan;
+import ru.obabok.client.render.RenderUtil;
 import ru.obabok.common.References;
 
 import java.util.Queue;
@@ -14,25 +15,36 @@ import java.util.concurrent.*;
 public class ChunkScheduler {
 
     private static final Queue<ChunkPos> chunkQueue = new ConcurrentLinkedQueue<>();
-    private static final ScheduledExecutorService schedulerChunk = Executors.newScheduledThreadPool(0);
-    private static final ScheduledExecutorService schedulerRender = Executors.newScheduledThreadPool(0);
+    private static ScheduledExecutorService schedulerChunk = Executors.newScheduledThreadPool(0);
+    private static ScheduledExecutorService schedulerRender = Executors.newScheduledThreadPool(0);
     private static ScheduledFuture<?> chunkScheduledFuture;
     private static ScheduledFuture<?> renderScheduledFuture;
     private static long period = 30;
-
+    private static volatile boolean isRunning = false;
     public static void startProcessing() {
-        chunkScheduledFuture = schedulerChunk.scheduleAtFixedRate(() -> {
-            try {
-                boolean processing = true;
-                while (processing){
-                    ChunkPos chunkPos = chunkQueue.poll();
-                    if (chunkPos != null && Minecraft.getInstance().level != null && Minecraft.getInstance().level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, ChunkStatus.FULL, false) != null) {
-                        processing = false;
-                        Scan.processChunk(Minecraft.getInstance().level, chunkPos);
-                    }
-                }
 
-            }catch (Exception e){
+        isRunning = true;
+
+        if (schedulerChunk == null || schedulerChunk.isShutdown()) {
+            schedulerChunk = Executors.newScheduledThreadPool(1);
+        }
+        if (schedulerRender == null || schedulerRender.isShutdown()) {
+            schedulerRender = Executors.newScheduledThreadPool(1);
+        }
+
+
+        chunkScheduledFuture = schedulerChunk.scheduleAtFixedRate(() -> {
+            if (!isRunning) return;
+            try {
+                Minecraft mc = Minecraft.getInstance();
+
+                if (mc.level == null) return;
+
+                ChunkPos chunkPos = chunkQueue.poll();
+                if (chunkPos != null && Minecraft.getInstance().level != null && Minecraft.getInstance().level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, ChunkStatus.FULL, false) != null) {
+                    Scan.processChunk(Minecraft.getInstance().level, chunkPos);
+                }
+            }catch (Throwable e){
                 References.LOGGER.error(e.getMessage());
             }
 
@@ -40,24 +52,23 @@ public class ChunkScheduler {
 
 
         renderScheduledFuture = schedulerRender.scheduleAtFixedRate(() -> {
+            if (!isRunning) return;
             try {
-                RenderUtil.clearRender();
-                RenderUtil.addAllRenderBlocks(Scan.selectedBlocks);
-                RenderUtil.addAllRenderChunks(Scan.unloadedChunks);
-            }catch (Exception ignored){}
+                if(Scan.renderDirty){
+                    RenderUtil.clearRender();
+                    RenderUtil.updateAll(Scan.selectedBlocks, Scan.unloadedChunks);
+                    Scan.renderDirty = false;
+                    RenderUtil.onDataUpdated();
+                }
+            }catch (Throwable ignored){}
 
-        }, 0, 1000, TimeUnit.MILLISECONDS);
+        }, 0, 500, TimeUnit.MILLISECONDS);
 
 
     }
 
     public static void updatePeriod(long newPeriod) {
-        if (chunkScheduledFuture != null) {
-            chunkScheduledFuture.cancel(false);
-        }
-        if(renderScheduledFuture != null){
-            renderScheduledFuture.cancel(false);
-        }
+        stopProcessing(Minecraft.getInstance());
         period = newPeriod;
         startProcessing();
     }
@@ -76,4 +87,21 @@ public class ChunkScheduler {
 
     }
 
+    public static void stopProcessing(Minecraft minecraft) {
+        isRunning = false;
+
+        if (chunkScheduledFuture != null) {
+            chunkScheduledFuture.cancel(false);
+        }
+        if (renderScheduledFuture != null) {
+            renderScheduledFuture.cancel(false);
+        }
+
+        if (schedulerChunk != null && !schedulerChunk.isShutdown()) {
+            schedulerChunk.shutdownNow();
+        }
+        if (schedulerRender != null && !schedulerRender.isShutdown()) {
+            schedulerRender.shutdownNow();
+        }
+    }
 }

@@ -5,7 +5,7 @@ import fi.dy.masa.malilib.hotkeys.IKeybindManager;
 import fi.dy.masa.malilib.hotkeys.IKeybindProvider;
 import ru.obabok.client.Config;
 import ru.obabok.client.gui.screens.ConfigGui;
-import ru.obabok.client.util.RenderUtil;
+import ru.obabok.client.render.RenderUtil;
 import ru.obabok.common.References;
 
 public class InputHandler implements IKeybindProvider {
