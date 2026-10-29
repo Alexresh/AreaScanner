@@ -26,9 +26,11 @@
 
   "areascanner.config.generic.name.areaEdgeRender": "Selected area edges render",
   "areascanner.config.generic.comment.areaEdgeRender": "",
-
   "areascanner.config.generic.name.areaEdgeColor": "Selected area edges color",
   "areascanner.config.generic.comment.areaEdgeColor": "",
+
+  "areascanner.config.generic.name.areaLinesRender": "Selected area lines render",
+  "areascanner.config.generic.comment.areaLinesRender": "",
 
   "areascanner.config.generic.name.LOD1": "LOD1[1.21.11 disabled]",
   "areascanner.config.generic.comment.LOD1": "->LOD2",
