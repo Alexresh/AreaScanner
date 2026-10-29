@@ -35,6 +35,7 @@ public class Config implements IConfigHandler {
 
         public static final ConfigBoolean AREA_EDGE_RENDER = new ConfigBoolean("areaEdgeRender", true).apply(GENERIC_KEY);
         public static final ConfigColor AREA_EDGE_COLOR = new ConfigColor("areaEdgeColor", "#16FFFFFF").apply(GENERIC_KEY);
+        public static final ConfigBoolean AREA_LINES_RENDER = new ConfigBoolean("areaLinesRender", true).apply(GENERIC_KEY);
 
         public static final ConfigInteger LOD1 = new ConfigInteger("LOD1", 30).apply(GENERIC_KEY);
         public static final ConfigInteger LOD2 = new ConfigInteger("LOD2", 50).apply(GENERIC_KEY);
@@ -66,6 +67,7 @@ public class Config implements IConfigHandler {
 
                 AREA_EDGE_RENDER,
                 AREA_EDGE_COLOR,
+                AREA_LINES_RENDER,
 
                 SPLITTER,
 

@@ -29,6 +29,9 @@
   "areascanner.config.generic.name.areaEdgeColor": "Цвет граней выделенной области",
   "areascanner.config.generic.comment.areaEdgeColor": "",
 
+  "areascanner.config.generic.name.areaLinesRender": "Отображение линий выделенной области",
+  "areascanner.config.generic.comment.areaLinesRender": "",
+
   "areascanner.config.generic.name.LOD1": "LOD1",
   "areascanner.config.generic.comment.LOD1": "Расстояние при котором выделенные блоки начнут рендерится хуже",
 
