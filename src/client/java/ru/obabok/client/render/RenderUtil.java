@@ -65,7 +65,7 @@ public class RenderUtil {
         if(Minecraft.getInstance().options.hideGui) return;
         long currentTimeMillis = System.nanoTime();
         BlockArea scanRange = Scan.getArea();
-        if(scanRange != null){
+        if(scanRange != null && Config.Generic.AREA_LINES_RENDER.getBooleanValue()){
             for (int i = 0; i < scanRange.size(); i++) {
                 if(Minecraft.getInstance().screen instanceof ScanTaskScreen && i != ScanTaskScreen.selectedBoxIndex){
                     renderAreaOutline(scanRange.getArea(i).min(), scanRange.getArea(i).max(), 1, Color4f.fromColor(CommonColors.GRAY), Color4f.fromColor(CommonColors.GRAY),Color4f.fromColor(CommonColors.GRAY));
