@@ -42,6 +42,9 @@
   "areascanner.config.generic.name.LOD2_hud": "Display LOD2 blocks in HUD",
   "areascanner.config.generic.comment.LOD2_hud": "Will never stop rendering",
 
+  "areascanner.config.generic.name.LOD2_hud_transparency": "LOD2 transparency in the HUD",
+  "areascanner.config.generic.comment.LOD2_hud_transparency": "",
+
   "areascanner.config.generic.name.group_render": "Renders groups of blocks as a single object",
   "areascanner.config.generic.comment.group_render": "It can be useful if there are large clusters of blocks in one place",
 

@@ -41,6 +41,9 @@
   "areascanner.config.generic.name.LOD2_hud": "Отображать LOD2 блоки в худе",
   "areascanner.config.generic.comment.LOD2_hud": "Они будут всегда рендерится",
 
+  "areascanner.config.generic.name.LOD2_hud_transparency": "Прозрачность LOD2 блоков в худе",
+  "areascanner.config.generic.comment.LOD2_hud_transparency": "",
+
   "areascanner.config.generic.name.group_render": "Рендер скопления блоков как одного объекта",
   "areascanner.config.generic.comment.group_render": "Может быть полезно если есть большие скопления блоков в одном месте",
 

@@ -5,8 +5,10 @@ import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.*;
 import fi.dy.masa.malilib.util.data.Color4f;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -431,28 +433,30 @@ public class RenderUtil {
             indexType = shapeIndexBuffer.type();
         }
 
-        GpuBufferSlice[] transforms = RenderSystem.getDynamicUniforms().writeTransforms(
-                new DynamicUniforms.Transform(
-                        RenderSystem.getModelViewMatrixCopy(),
-                        COLOR_MODULATOR,
-                        MODEL_OFFSET,
-                        TEXTURE_MATRIX
-                )
+        GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().writeTransform(
+                RenderSystem.getModelViewMatrixCopy(),
+                COLOR_MODULATOR,
+                MODEL_OFFSET,
+                TEXTURE_MATRIX
         );
+
+        RenderTarget mainTarget = client.gameRenderer.mainRenderTarget();
+        GpuTextureView colorTexture = mainTarget.getColorTextureView();
+        assert colorTexture != null;
 
         try (RenderPass renderPass = RenderSystem.getDevice()
                 .createCommandEncoder()
                 .createRenderPass(
-                        () -> "mod_render_pass",
-                        client.gameRenderer.mainRenderTarget().getColorTextureView(),
+                        () -> References.MOD_ID  + " render pipeline",
+                        colorTexture,
                         Optional.empty(),
-                        client.gameRenderer.mainRenderTarget().getDepthTextureView(),
+                        mainTarget.getDepthTextureView(),
                         OptionalDouble.empty()
                 )) {
 
-            RenderSystem.bindDefaultUniforms(renderPass);
             renderPass.setPipeline(pipeline);
-            renderPass.setUniform("DynamicTransforms", transforms[0]);
+            RenderSystem.bindDefaultUniforms(renderPass);
+            renderPass.setUniform("DynamicTransforms", transforms);
 
             renderPass.setVertexBuffer(0, vertexBuffer.slice());
             renderPass.setIndexBuffer(indices, indexType);

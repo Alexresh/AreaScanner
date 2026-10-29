@@ -18,8 +18,8 @@ public abstract class TitleScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("HEAD"))
     private void init(CallbackInfo ci){
-        if(!AreaScannerClient.isMaliLibLoaded){
-            minecraft.setScreenAndShow(new NoMalilibScreen());
+        if(!AreaScannerClient.isMaliLibLoaded && !NoMalilibScreen.showed){
+            minecraft.setScreenAndShow(new NoMalilibScreen((TitleScreen) (Object)this));
         }
     }
 }

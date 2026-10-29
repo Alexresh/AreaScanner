@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import ru.obabok.client.AreaScannerClient;
 import ru.obabok.client.Scan;
 import ru.obabok.client.util.AreaScannerMalilibHelper;
 import ru.obabok.client.util.ChunkScheduler;
@@ -22,7 +23,7 @@ public class WorldChunkMixin {
 
     @Inject(method = "setBlockState", at = @At("RETURN"))
     private void setBlock(BlockPos pos, BlockState state, int i, CallbackInfoReturnable<BlockState> cir){
-        if(AreaScannerMalilibHelper.shouldUpdateRealtime()){
+        if(AreaScannerClient.shouldUpdateRealtime()){
             BlockState oldState = cir.getReturnValue();
             if (oldState != null && oldState != state) {
                 Level world = ((LevelChunk) (Object) this).getLevel();
