@@ -39,8 +39,8 @@ public class ConfigGui extends GuiConfigsBase {
         this.addButton(testBtn, (btn, mousebtn)->{
             minecraft.player.playSound(SoundEvents.AMBIENT_CAVE.value());
             onClose();
-            //minecraft.setScreenAndShow(new AlertScreen(() -> {onClose();}, Component.literal("Ты кому звониш?"), Component.literal("а?"), Component.literal("Тебе"), true));
-            //minecraft.setScreenAndShow(new TitleScreen(true, null));
+            //minecraft.gui.setScreen(new AlertScreen(() -> {onClose();}, Component.literal("Ты кому звониш?"), Component.literal("а?"), Component.literal("Тебе"), true));
+            //minecraft.gui.setScreen(new TitleScreen(true, null));
             //onClose();
 //            if(Scan.getRange() != null){
 //                AsyncObsidianScanner.startAsyncScan(Minecraft.getInstance().level, Scan.getRange().aabb());
