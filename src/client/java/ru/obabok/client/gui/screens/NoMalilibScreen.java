@@ -21,6 +21,6 @@ public class NoMalilibScreen extends Screen {
         Component noMalilibText = Component.literal("Malilib mod not found, unable to load AreaScanner");
         addRenderableWidget(new StringWidget(width / 2 - font.width(noMalilibText) / 2, height / 2, font.width(noMalilibText), 20, noMalilibText, font));
         addRenderableWidget(Button.builder(Component.literal("Exit"), btn -> System.exit(0)).bounds(width / 2 - 90, height / 2 + 40, 80, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Continue"), btn -> Minecraft.getInstance().setScreenAndShow(parent)).bounds(width / 2 + 10, height / 2 + 40, 80, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Continue"), btn -> Minecraft.getInstance().gui.setScreen(parent)).bounds(width / 2 + 10, height / 2 + 40, 80, 20).build());
     }
 }

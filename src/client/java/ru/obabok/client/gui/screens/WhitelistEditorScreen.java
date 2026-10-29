@@ -131,7 +131,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
             if(validateCreatedWhitelistItem()){
                 current_whitelist.add(createdWhitelistItem);
                 WhitelistManager.saveData(new Whitelist(current_whitelist), filename);
-                minecraft.setScreenAndShow(new WhitelistEditorScreen(parent, filename, 0));
+                minecraft.gui.setScreen(new WhitelistEditorScreen(parent, filename, 0));
             }
         }).bounds(30, y, 90, 20).build();
         addRenderableWidget(addToWhitelistBtn);
@@ -146,7 +146,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
             i++;
             addRenderableWidget(Button.builder(Component.literal("❌"), btn -> {
                 WhitelistManager.removeFromWhitelist(filename, item);
-                minecraft.setScreenAndShow(new WhitelistEditorScreen(parent, filename, currentPage));
+                minecraft.gui.setScreen(new WhitelistEditorScreen(parent, filename, currentPage));
             }).bounds(280, y, 20, 20).build());
             StringWidget widget = new StringWidget(310, y, 120, 20, Component.literal("Condition " + (currentPage * BLOCKS_PER_PAGE + i) + "  OR"), font);
 
@@ -170,7 +170,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         y = pageBlocks.size() * 23 + 30;
 
         Button prevBtn = Button.builder(Component.literal("<"), btn ->
-                minecraft.setScreenAndShow(new WhitelistEditorScreen(parent, filename, currentPage - 1))
+                minecraft.gui.setScreen(new WhitelistEditorScreen(parent, filename, currentPage - 1))
         ).bounds(280, y, 20, 20).build();
         prevBtn.active = currentPage > 0;
         addRenderableWidget(prevBtn);
@@ -179,7 +179,7 @@ public class WhitelistEditorScreen extends ScreenPlus {
         addRenderableWidget(new StringWidget(275 + 30, y + 1, 80, 20, Component.literal("Page " + (currentPage + 1) + "/" + Math.max(1, totalPages)), minecraft.font));
 
         Button nextBtn = Button.builder(Component.literal(">"), btn ->
-                minecraft.setScreenAndShow(new WhitelistEditorScreen(parent, filename, currentPage + 1))
+                minecraft.gui.setScreen(new WhitelistEditorScreen(parent, filename, currentPage + 1))
         ).bounds(400, y, 20, 20).build();
         nextBtn.active = to < current_whitelist.size();
         addRenderableWidget(nextBtn);
@@ -201,13 +201,13 @@ public class WhitelistEditorScreen extends ScreenPlus {
             if(presets.getSelectedEntry() != null){
                 current_whitelist.addAll(presets.getSelectedEntry().whitelist);
                 WhitelistManager.saveData(new Whitelist(current_whitelist), filename);
-                minecraft.setScreenAndShow(new WhitelistEditorScreen(parent, filename, 0));
+                minecraft.gui.setScreen(new WhitelistEditorScreen(parent, filename, 0));
             }
         }).bounds(340, y - 1, 80, 20).build());
 
 
         //back button
-        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> minecraft.setScreenAndShow(parent))
+        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> minecraft.gui.setScreen(parent))
                 .bounds(30, height - 30, 80, 20).build());
 
     }

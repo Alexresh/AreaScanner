@@ -31,7 +31,7 @@ public class SharedScansScreen extends Screen {
     @Override
     protected void init() {
         ClientNetwork.requestSharedList();
-        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> minecraft.setScreenAndShow(parent))
+        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> minecraft.gui.setScreen(parent))
                 .bounds(30, height - 30, 80, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("Refresh"), btn -> {
@@ -89,7 +89,7 @@ public class SharedScansScreen extends Screen {
             addRenderableWidget(subscribeBtn);
 
             addRenderableWidget(new Button.Builder(Component.literal("[M]"), button -> {
-                minecraft.setScreenAndShow(new MaterialListScreen(this, info.id()));
+                minecraft.gui.setScreen(new MaterialListScreen(this, info.id()));
             }).bounds(width - 50, y, 20, 20).build());
 
             if(info.ownerUUID().equals(minecraft.player.getUUID()) || minecraft.player.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)){
