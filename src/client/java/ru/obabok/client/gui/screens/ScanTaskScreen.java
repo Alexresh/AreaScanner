@@ -18,8 +18,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.CommonColors;
 import org.lwjgl.glfw.GLFW;
+import ru.obabok.client.Config;
 import ru.obabok.client.Scan;
 import ru.obabok.client.gui.widgets.ToggelableWidgedDropDownList;
+import ru.obabok.client.util.Lavobsidian.AsyncObsidianScanner;
 import ru.obabok.common.model.BlockArea;
 import ru.obabok.client.models.ScreenPlus;
 import ru.obabok.client.network.ClientNetwork;
@@ -202,7 +204,7 @@ public class ScanTaskScreen extends ScreenPlus {
         addRenderableWidget(shareNameField);
 
         //back button
-        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> minecraft.setScreenAndShow(parent)).bounds( 30, height - 30, 50, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> minecraft.setScreen(parent)).bounds( 30, height - 30, 50, 20).build());
 
         //start button
         startButton = Button.builder(Component.literal("Start scan"), btn -> {
@@ -249,6 +251,33 @@ public class ScanTaskScreen extends ScreenPlus {
         }).bounds(370, height - 30, 90, 20).build();
         loadStateBtn.active = !Scan.isProcessing();
         addRenderableWidget(loadStateBtn);
+
+        if(Config.Generic.OBSIDIAN_PREDICTOR.getBooleanValue()){
+            //vibecode warning
+            Button lavaScanButton = Button.builder(Component.literal("Lava scan"), btn -> {
+                if (minecraft.player == null || minecraft.level == null) return;
+                if (Scan.isProcessing()) {
+                    minecraft.player.displayClientMessage(Component.literal("Stop the current scan first"), false);
+                    return;
+                }
+                BlockArea area = Scan.getArea();
+                if (area == null || area.isEmpty()) {
+                    minecraft.player.displayClientMessage(Component.literal("Set a scan area first"), false);
+                    return;
+                }
+                AsyncObsidianScanner.startAsyncScan(minecraft.level, area);
+            }).bounds(20, height - 55, 75, 20).build();
+            lavaScanButton.active = !Scan.isProcessing();
+            addRenderableWidget(lavaScanButton);
+
+            Button clearLavaBtn = Button.builder(Component.literal("Clear lava"), btn -> {
+                AsyncObsidianScanner.stopAndClear();
+                minecraft.setScreen(new ScanTaskScreen(parent, Scan.getArea()));
+            }).bounds(100, height - 55, 75, 20).build();
+            clearLavaBtn.active = AsyncObsidianScanner.canStopOrClear();
+            addRenderableWidget(clearLavaBtn);
+            //vibecode warning
+        }
 
         refreshFieldsFromSelection();
     }
@@ -319,11 +348,11 @@ public class ScanTaskScreen extends ScreenPlus {
         super.render(context, mouseX, mouseY, delta);
     }
 
+
     @Override
     protected void renderBlurredBackground(GuiGraphics guiGraphics) {
 
     }
-
 
     private void moveToPlayer(boolean minCorner){
         if(minecraft.player == null) return;

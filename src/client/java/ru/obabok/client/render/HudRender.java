@@ -1,7 +1,6 @@
 package ru.obabok.client.render;
 
 import fi.dy.masa.malilib.config.HudAlignment;
-import fi.dy.masa.malilib.render.RenderUtils;
 import fi.dy.masa.malilib.util.EntityUtils;
 import fi.dy.masa.malilib.util.GuiUtils;
 import net.minecraft.ChatFormatting;
@@ -22,6 +21,8 @@ import net.minecraft.world.phys.Vec3;
 import ru.obabok.client.Config;
 import ru.obabok.client.Scan;
 import ru.obabok.client.util.ChunkScheduler;
+import ru.obabok.client.util.Lavobsidian.AsyncObsidianScanner;
+import ru.obabok.client.util.Lavobsidian.LavaMarker;
 
 import java.util.*;
 
@@ -42,6 +43,7 @@ public class HudRender {
 
     private static final List<BlockPos> preparedBlockClusters = new ArrayList<>();
     private static final List<ChunkPos> preparedChunkClusters = new ArrayList<>();
+    private static final List<LavaMarker> preparedLavaMarkers = new ArrayList<>();
 
     private static float clusterUpdateTimer = 0f;
     private static final float UPDATE_INTERVAL = 20f;
@@ -124,6 +126,28 @@ public class HudRender {
                     LOGGER.error(exception.getMessage());
                 }
 
+            }
+            if(Config.Generic.OBSIDIAN_PREDICTOR.getBooleanValue()){
+                //vibecode warning
+                Set<ChunkPos> lavobsidianChunks = AsyncObsidianScanner.getUnloadedChunks();
+                if (!lavobsidianChunks.isEmpty()) {
+                    Iterator<ChunkPos> iterator = lavobsidianChunks.iterator();
+                    if (iterator.hasNext()) {
+                        lines.add(Component.literal("Lavobsidian unchecked chunks: %d -> %s"
+                                .formatted(lavobsidianChunks.size(), iterator.next())));
+                    }
+                }
+                int lavaMarkersCount = AsyncObsidianScanner.getMarkerCount();
+                if (lavaMarkersCount > 0) {
+                    var player = Minecraft.getInstance().player;
+                    BlockPos nearest = AsyncObsidianScanner.getNearestMarker(player != null ? player.blockPosition() : null);
+                    if (nearest != null) {
+                        lines.add(Component.literal("Lava markers: %d -> [%d, %d, %d]".formatted(lavaMarkersCount, nearest.getX(), nearest.getY(), nearest.getZ())));
+                    } else {
+                        lines.add(Component.literal("Lava markers: %d".formatted(lavaMarkersCount)));
+                    }
+                }
+                //vibecode warning
             }
             if (Config.Hud.HUD_RENDER_TIME.getBooleanValue()){
                 long now = System.currentTimeMillis();
@@ -277,6 +301,7 @@ public class HudRender {
     private static void prepareClusteredDots() {
         preparedBlockClusters.clear();
         preparedChunkClusters.clear();
+        preparedLavaMarkers.clear();
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
@@ -301,6 +326,21 @@ public class HudRender {
                 }
             }
             preparedBlockClusters.addAll(blockClusters.values());
+
+            if(Config.Generic.OBSIDIAN_PREDICTOR.getBooleanValue()){
+                //vibecode warning
+                if (AsyncObsidianScanner.hasRenderableMarkers()) {
+                    for (LavaMarker marker : AsyncObsidianScanner.getMarkers()) {
+                        double dx = marker.pos.getX() + 0.5 - camX;
+                        double dz = marker.pos.getZ() + 0.5 - camZ;
+                        double distXZ = Math.sqrt(dx * dx + dz * dz);
+                        if (distXZ > lodHorizon) {
+                            preparedLavaMarkers.add(marker);
+                        }
+                    }
+                }
+                //vibecode warning
+            }
         }
 
         if (Config.Generic.UNLOADED_CHUNK_HUD_RENDER.getBooleanValue()) {
@@ -333,6 +373,16 @@ public class HudRender {
             for (int i = 0; i < preparedBlockClusters.size(); i++) {
                 BlockPos pos = preparedBlockClusters.get(i);
                 renderDot(guiGraphicsExtractor, camera, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, screenWidth, screenHeight, color);
+            }
+            if(Config.Generic.OBSIDIAN_PREDICTOR.getBooleanValue()){
+                float alpha = Config.Generic.LOD2_HUD_TRANSPARENCY.getFloatValue();
+                //vibecode warning
+                for (int i = 0; i < preparedLavaMarkers.size(); i++) {
+                    LavaMarker marker = preparedLavaMarkers.get(i);
+                    int markerColor = marker.color.withAlpha(alpha).getIntValue();
+                    renderDot(guiGraphicsExtractor, camera, marker.pos.getX() + 0.5, marker.pos.getY() + 0.5, marker.pos.getZ() + 0.5, screenWidth, screenHeight, markerColor);
+                }
+                //vibecode warning
             }
         }
 

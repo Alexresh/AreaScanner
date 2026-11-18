@@ -1,5 +1,5 @@
 {
-  "areascanner.gui.title.configs": "areascanner mod by Obabok and Hopper4et",
+  "areascanner.gui.title.configs": "AreaScanner",
   "areascanner.gui.title.generic": "General",
   "areascanner.gui.title.hud": "Hud",
   "areascanner.gui.title.whitelists": "Whitelists",
@@ -67,6 +67,9 @@
 
   "areascanner.config.generic.name.mainHotkey": "Open config",
   "areascanner.config.generic.comment.mainHotkey": "opens this screen",
+
+  "areascanner.config.generic.name.obsidianPredictor": "Enable  Vvibecoded port of Obsidian Predictor (original author: EQUENOS-2)",
+  "areascanner.config.generic.comment.obsidianPredictor": "VIBECODE WARNING!",
 
 
   "areascanner.config.hud.name.hudEnable": "Hud",

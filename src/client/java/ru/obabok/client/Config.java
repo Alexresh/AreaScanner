@@ -52,6 +52,8 @@ public class Config implements IConfigHandler {
         public static final ConfigHotkey MAIN = new ConfigHotkey("mainHotkey", "LEFT_ALT,RIGHT_BRACKET").apply(GENERIC_KEY);
         public static final ConfigSplitter SPLITTER = new ConfigSplitter();
 
+        public static final ConfigBoolean OBSIDIAN_PREDICTOR = new ConfigBoolean("obsidianPredictor", false).apply(GENERIC_KEY);
+
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 UNLOADED_CHUNK_MAX_DISTANCE,
                 UNLOADED_CHUNK_HUD_RENDER,
@@ -85,7 +87,12 @@ public class Config implements IConfigHandler {
                 JOIN_NOTIFICATION,
                 LOOK_RANDOM_SELECTED_BLOCK,
                 MAIN_RENDER,
-                MAIN
+                MAIN,
+
+                SPLITTER,
+                SPLITTER,
+                SPLITTER,
+                OBSIDIAN_PREDICTOR
         );
     }
 

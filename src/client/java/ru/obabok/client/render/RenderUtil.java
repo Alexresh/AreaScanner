@@ -10,10 +10,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.*;
 import fi.dy.masa.malilib.util.data.Color4f;
-
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MappableRingBuffer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
@@ -27,6 +25,7 @@ import ru.obabok.client.Scan;
 import ru.obabok.client.gui.screens.ScanTaskScreen;
 import ru.obabok.client.models.BlockGroup;
 import ru.obabok.client.util.ConnectedBlockFinder;
+import ru.obabok.client.util.Lavobsidian.AsyncObsidianScanner;
 import ru.obabok.common.model.BlockArea;
 import ru.obabok.common.References;
 
@@ -78,8 +77,10 @@ public class RenderUtil {
 //            }
         }
 
+        boolean hasNormalRender = !renderChunksList.isEmpty() || !renderBlocksList.isEmpty();
+        boolean hasLavaRender = AsyncObsidianScanner.hasRenderableMarkers();
 
-        if(!renderChunksList.isEmpty() || !renderBlocksList.isEmpty()){
+        if(hasNormalRender || hasLavaRender){
             try {
 
                 context.matrices().pushPose();
@@ -89,6 +90,11 @@ public class RenderUtil {
                 prepareRenderChunks(context);
 
                 prepareRenderBlocksOptimized(context);
+                if(Config.Generic.OBSIDIAN_PREDICTOR.getBooleanValue()){
+                    //vibecode warning
+                    AsyncObsidianScanner.render(context);
+                    //vibecode warning
+                }
                 context.matrices().popPose();
                 renderAll(Minecraft.getInstance(), BLOCKS_RENDER, context.matrices());
             }catch (Exception ignored){
@@ -106,7 +112,7 @@ public class RenderUtil {
         Vec3 camera = context.worldState().cameraRenderState.pos;
 
 
-        Color4f chunkColor = Config.Generic.UNLOADED_CHUNK_COLOR.getColor();
+        int chunkColor = Config.Generic.UNLOADED_CHUNK_COLOR.getIntegerValue();
         int maxChunkDist = Config.Generic.UNLOADED_CHUNK_MAX_DISTANCE.getIntegerValue();
         int offset = Config.Generic.UNLOADED_CHUNK_Y_OFFSET.getIntegerValue();
         boolean checkChunkDist = maxChunkDist >= 0;
@@ -140,16 +146,23 @@ public class RenderUtil {
 
         int maxDistance = Config.Generic.SELECTED_BLOCKS_MAX_DISTANCE.getIntegerValue();
         boolean checkDistance = maxDistance != -1;
-        Color4f color = Color4f.fromColor(Config.Generic.SELECTED_BLOCKS_COLOR.getIntegerValue());
+        int color =  Config.Generic.SELECTED_BLOCKS_COLOR.getIntegerValue();
 
         if(Config.Generic.AREA_EDGE_RENDER.getBooleanValue()){
             BlockArea area = Scan.getArea();
             for (int i = 0; i < area.size(); i++) {
                 if((camera.x <= area.getArea(i).min().getX() || camera.x >= area.getArea(i).max().getX() + 1) ||
                         (camera.y <= area.getArea(i).min().getY() || camera.y >= area.getArea(i).max().getY() + 1) ||
-                        (camera.z <= area.getArea(i).min().getZ() || camera.z >= area.getArea(i).max().getZ() + 1)
-                ){
-                    newRenderFilledBox(matrices.last().pose(), area.getArea(i).min().getX(), area.getArea(i).min().getY(), area.getArea(i).min().getZ(), area.getArea(i).max().getX() + 1, area.getArea(i).max().getY() + 1, area.getArea(i).max().getZ() + 1, camera, Config.Generic.AREA_EDGE_COLOR.getColor());
+                        (camera.z <= area.getArea(i).min().getZ() || camera.z >= area.getArea(i).max().getZ() + 1)) {
+                    newRenderFilledBox(matrices.last().pose(),
+                            area.getArea(i).min().getX(),
+                            area.getArea(i).min().getY(),
+                            area.getArea(i).min().getZ(),
+                            area.getArea(i).max().getX() + 1,
+                            area.getArea(i).max().getY() + 1,
+                            area.getArea(i).max().getZ() + 1,
+                            camera,
+                            Config.Generic.AREA_EDGE_COLOR.getIntegerValue());
                 }
             }
 
@@ -203,13 +216,13 @@ public class RenderUtil {
         }
     }
 
-    private static Vec3 getLookDirection(Quaternionf orientation) {
+    public static Vec3 getLookDirection(Quaternionf orientation) {
         org.joml.Vector3f forward = new org.joml.Vector3f(0, 0, -1);
         orientation.transform(forward);
         return new Vec3(forward.x, forward.y, forward.z);
     }
 
-    private static void addMediumDetailCube(Matrix4f matrix, double x1, double y1, double z1, double x2, double y2, double z2, Vec3 camera, Color4f color) {
+    private static void addMediumDetailCube(Matrix4f matrix, double x1, double y1, double z1, double x2, double y2, double z2, Vec3 camera, int color) {
         float rx1 = (float)(x1 - camera.x);
         float ry1 = (float)(y1 - camera.y);
         float rz1 = (float)(z1 - camera.z);
@@ -217,18 +230,18 @@ public class RenderUtil {
         float ry2 = (float)(y2 - camera.y);
         float rz2 = (float)(z2 - camera.z);
 
-        buffer.addVertex(matrix, rx1, ry1, rz1).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(matrix, rx2, ry1, rz2).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(matrix, rx2, ry2, rz2).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(matrix, rx1, ry2, rz1).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(matrix, rx2, ry1, rz1).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(matrix, rx1, ry1, rz2).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(matrix, rx1, ry2, rz2).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(matrix, rx2, ry2, rz1).setColor(color.r, color.g, color.b, color.a);
+        buffer.addVertex(matrix, rx1, ry1, rz1).setColor(color);
+        buffer.addVertex(matrix, rx2, ry1, rz2).setColor(color);
+        buffer.addVertex(matrix, rx2, ry2, rz2).setColor(color);
+        buffer.addVertex(matrix, rx1, ry2, rz1).setColor(color);
+        buffer.addVertex(matrix, rx2, ry1, rz1).setColor(color);
+        buffer.addVertex(matrix, rx1, ry1, rz2).setColor(color);
+        buffer.addVertex(matrix, rx1, ry2, rz2).setColor(color);
+        buffer.addVertex(matrix, rx2, ry2, rz1).setColor(color);
 
     }
 
-    public static void buildGroupMesh(Matrix4f positionMatrix, BlockGroup group, Vec3 camera, Color4f color) {
+    public static void buildGroupMesh(Matrix4f positionMatrix, BlockGroup group, Vec3 camera, int color) {
         for (BlockPos pos : group.blocks) {
             int x = pos.getX();
             int y = pos.getY();
@@ -245,54 +258,54 @@ public class RenderUtil {
         }
     }
 
-    private static void addBoxFaces(Matrix4f positionMatrix, int x, int y, int z, Vec3 camera, Color4f color, boolean up, boolean down, boolean north, boolean south, boolean east, boolean west) {
+    private static void addBoxFaces(Matrix4f positionMatrix, int x, int y, int z, Vec3 camera, int color, boolean up, boolean down, boolean north, boolean south, boolean east, boolean west) {
 
         if(up){
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color);
         }
 
         if(down){
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color);
         }
 
         if(north){
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color);
         }
 
         if(south){
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color);
         }
 
         if(west){
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color);
         }
 
         if(east){
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color.r, color.g, color.b, color.a);
-            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z + 1 - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y - camera.y), (float)(z - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z - camera.z)).setColor(color);
+            buffer.addVertex(positionMatrix, (float)(x + 1 - camera.x), (float)(y + 1 - camera.y), (float)(z + 1 - camera.z)).setColor(color);
         }
 
     }
 
 
-    private static void addBillboardLOD(Matrix4f viewMatrix, double blockX, double blockY, double blockZ, Vec3 camera, Color4f color, float width, float height) {
+    private static void addBillboardLOD(Matrix4f viewMatrix, double blockX, double blockY, double blockZ, Vec3 camera, int color, float width, float height) {
         float cx = (float)(blockX + 0.5 - camera.x);
         float cy = (float)(blockY + 0.5 - camera.y);
         float cz = (float)(blockZ + 0.5 - camera.z);
@@ -328,50 +341,57 @@ public class RenderUtil {
 
         float rW = (float)(rightX * halfW);
         float rH_up = (float)(upX * halfH);
-        buffer.addVertex(viewMatrix, cx - rW - rH_up, cy - (float)(rightY * halfW) - (float)(upY * halfH), cz - (float)(rightZ * halfW) - (float)(upZ * halfH)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(viewMatrix, cx + rW - rH_up, cy + (float)(rightY * halfW) - (float)(upY * halfH), cz + (float)(rightZ * halfW) - (float)(upZ * halfH)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(viewMatrix, cx + rW + rH_up, cy + (float)(rightY * halfW) + (float)(upY * halfH), cz + (float)(rightZ * halfW) + (float)(upZ * halfH)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(viewMatrix, cx - rW + rH_up, cy - (float)(rightY * halfW) + (float)(upY * halfH), cz - (float)(rightZ * halfW) + (float)(upZ * halfH)).setColor(color.r, color.g, color.b, color.a);
+        buffer.addVertex(viewMatrix, cx - rW - rH_up, cy - (float)(rightY * halfW) - (float)(upY * halfH), cz - (float)(rightZ * halfW) - (float)(upZ * halfH)).setColor(color);
+        buffer.addVertex(viewMatrix, cx + rW - rH_up, cy + (float)(rightY * halfW) - (float)(upY * halfH), cz + (float)(rightZ * halfW) - (float)(upZ * halfH)).setColor(color);
+        buffer.addVertex(viewMatrix, cx + rW + rH_up, cy + (float)(rightY * halfW) + (float)(upY * halfH), cz + (float)(rightZ * halfW) + (float)(upZ * halfH)).setColor(color);
+        buffer.addVertex(viewMatrix, cx - rW + rH_up, cy - (float)(rightY * halfW) + (float)(upY * halfH), cz - (float)(rightZ * halfW) + (float)(upZ * halfH)).setColor(color);
 
     }
 
-    private static void newRenderFilledBox(Matrix4f positionMatrix, double x1, double y1, double z1, double x2, double y2, double z2, Vec3 camera, Color4f color) {
+    private static void newRenderFilledBox(Matrix4f positionMatrix, double x1, double y1, double z1, double x2, double y2, double z2, Vec3 camera, int color) {
 
         //up
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color);
 
         //down
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color);
 
         //north
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color);
 
         //south
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color);
 
         //west
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color);
 
         //east
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color.r, color.g, color.b, color.a);
-        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color.r, color.g, color.b, color.a);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y1 - camera.y), (float)(z1 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z1 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y2 - camera.y), (float)(z2 - camera.z)).setColor(color);
+    }
+
+    private static void filledPlane(Matrix4f positionMatrix, double x1, double z1, double x2, double z2, double y, Vec3 camera, int color){
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y - camera.y), (float)(z2 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x2 - camera.x), (float)(y - camera.y), (float)(z1 - camera.z)).setColor(color);
+        buffer.addVertex(positionMatrix, (float)(x1 - camera.x), (float)(y - camera.y), (float)(z1 - camera.z)).setColor(color);
     }
 
     private static void filledPlane(Matrix4f positionMatrix, double x1, double z1, double x2, double z2, double y, Vec3 camera, Color4f color){
@@ -467,6 +487,7 @@ public class RenderUtil {
         if (sortState != null) {
             indices.close();
         }
+
     }
 
     public static void lookRandomSelectedBlock(){
@@ -499,4 +520,43 @@ public class RenderUtil {
         if(Config.Generic.MAIN_RENDER.getBooleanValue()) renderChunksList.addAll(chunkPos);
     }*/
 
+
+    //VIBECODE (dragons there)
+    public static void renderWaypointWithLOD(Matrix4f matrix, BlockPos pos, Vec3 camera, Vec3 lookDirection, Color4f color) {
+        double relX = pos.getX() + 0.5 - camera.x;
+        double relY = pos.getY() + 0.5 - camera.y;
+        double relZ = pos.getZ() + 0.5 - camera.z;
+
+        double distXZ = Math.sqrt(relX * relX + relZ * relZ);
+        double distance = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
+
+        // Frustum check: don't cull if in front horizontally or in front 3D
+        if (distance > 0.1) {
+            double dot3D = (relX * lookDirection.x + relY * lookDirection.y + relZ * lookDirection.z) / distance;
+            double dotHoriz = (relX * lookDirection.x + relZ * lookDirection.z) / Math.max(0.001, distXZ);
+            if (dot3D < -0.35 && dotHoriz < -0.35) {
+                return;
+            }
+        }
+
+        int lod1 = Config.Generic.LOD1.getIntegerValue();
+        int lod2 = Config.Generic.LOD2.getIntegerValue();
+        int lodHorizon = Config.Generic.LOD2_HORIZON.getIntegerValue();
+
+        if (distXZ < lod1) {
+            // Close: full 3D filled box
+            newRenderFilledBox(matrix, pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1, camera, color.getIntValue());
+        } else if (distXZ < lod2) {
+            // Medium: 3D filled box
+            newRenderFilledBox(matrix, pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1, camera, color.getIntValue());
+        } else if (distXZ < lodHorizon) {
+            // Horizon: billboard at actual block + horizon beacon
+            addBillboardLOD(matrix, pos.getX(), pos.getY(), pos.getZ(), camera, color.getIntValue(), 2.0f, 2.0f);
+            addBillboardLOD(matrix, pos.getX(), camera.y, pos.getZ(), camera, color.getIntValue(), 1.5f, 4.0f);
+        } else {
+            // Distant (> lodHorizon): prominent beacon pillar on horizon + billboard at block
+            addBillboardLOD(matrix, pos.getX(), camera.y, pos.getZ(), camera, color.getIntValue(), 2.5f, 8.0f);
+            addBillboardLOD(matrix, pos.getX(), pos.getY(), pos.getZ(), camera, color.getIntValue(), 3.0f, 3.0f);
+        }
+    }
 }
