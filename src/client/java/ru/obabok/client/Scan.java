@@ -56,6 +56,7 @@ public class Scan {
             return 0;
         }
         processing = true;
+
         HashSet<ChunkPos> affectedChunks = area.getAffectedChunks();
         for (ChunkPos chunkPos : affectedChunks){
             if (world.getChunkSource().getChunk(chunkPos.x(), chunkPos.z(), ChunkStatus.FULL, false) != null) {

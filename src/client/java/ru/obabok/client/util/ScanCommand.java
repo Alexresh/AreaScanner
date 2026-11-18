@@ -67,6 +67,7 @@ public class ScanCommand {
                                         .executes(ctx -> startScan(ctx,
                                                 StringArgumentType.getString(ctx, "whitelist"),
                                                 StringArgumentType.getString(ctx, "share_name"))))))
+
                 .then(ClientCommands.literal("startFast")
                         .then(ClientCommands.argument("from", CBlockPosArgument.blockPos())
                                 .then(ClientCommands.argument("to", CBlockPosArgument.blockPos())
@@ -82,7 +83,6 @@ public class ScanCommand {
                                                             return startScan(ctx, StringArgumentType.getString(ctx, "whitelist"), StringArgumentType.getString(ctx, "share_name"));
                                                         })))))
                 )
-
                 .then(ClientCommands.literal("stop").executes(context -> {
                     if (Scan.isRemoteProcessing()) ClientNetwork.stopScan();
                     Scan.stopScan();

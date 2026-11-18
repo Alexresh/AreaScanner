@@ -14,7 +14,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ru.obabok.client.AreaScannerClient;
 import ru.obabok.client.Scan;
-import ru.obabok.client.util.AreaScannerMalilibHelper;
 import ru.obabok.client.util.ChunkScheduler;
 
 @Environment(EnvType.CLIENT)
