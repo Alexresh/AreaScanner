@@ -4,17 +4,21 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.ChunkPos;
+import ru.obabok.client.gui.screens.VibeCodeAlertScreen;
 import ru.obabok.client.render.HudRender;
 import ru.obabok.client.render.RenderUtil;
+import ru.obabok.client.util.Lavobsidian.AsyncObsidianScanner;
 import ru.obabok.common.model.BlockArea;
 import ru.obabok.client.network.ClientNetwork;
 import ru.obabok.client.util.*;
@@ -56,6 +60,7 @@ public class AreaScannerClient implements ClientModInitializer {
 			});
 
 			ClientChunkEvents.CHUNK_LOAD.register((clientWorld, worldChunk) -> {
+				AsyncObsidianScanner.onChunkLoaded(clientWorld, worldChunk.getPos());
 				BlockArea area = Scan.getArea();
 				if (area == null) return;
 
@@ -68,12 +73,24 @@ public class AreaScannerClient implements ClientModInitializer {
 				}
 			});
 
+			ClientTickEvents.END_CLIENT_TICK.register(client -> {
+				if (client.player != null && client.level != null) {
+					AsyncObsidianScanner.tick(client.level);
+				}
+			});
+
 			HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(References.MOD_ID, "hud"), HudRender::render);
 			WorldRenderEvents.END_MAIN.register(RenderUtil::render);
 			ChunkScheduler.startProcessing();
 			ClientLifecycleEvents.CLIENT_STOPPING.register(ChunkScheduler::stopProcessing);
 			Config.Generic.MAIN_RENDER.setValueChangeCallback(config -> {
 				Scan.renderDirty = true;
+			});
+
+			Config.Generic.OBSIDIAN_PREDICTOR.setValueChangeCallback(config -> {
+				if(config.getBooleanValue()){
+					Minecraft.getInstance().setScreen(new VibeCodeAlertScreen());
+				}
 			});
 		}
 	}

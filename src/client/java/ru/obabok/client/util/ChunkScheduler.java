@@ -3,10 +3,12 @@ package ru.obabok.client.util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
+import ru.obabok.client.Config;
 import ru.obabok.client.Scan;
 import ru.obabok.client.render.RenderUtil;
 import ru.obabok.common.References;
 
+import java.util.HashSet;
 import java.util.Queue;
 import java.util.concurrent.*;
 
@@ -56,7 +58,19 @@ public class ChunkScheduler {
             try {
                 if(Scan.renderDirty){
                     RenderUtil.clearRender();
-                    RenderUtil.updateAll(Scan.selectedBlocks, Scan.unloadedChunks);
+                    if(Config.Generic.OBSIDIAN_PREDICTOR.getBooleanValue()){
+                        //vibecode warning
+                        HashSet<ChunkPos> unloadedChunks = new HashSet<>(Scan.unloadedChunks);
+                        unloadedChunks.addAll(ru.obabok.client.util.Lavobsidian.AsyncObsidianScanner.getUnloadedChunks());
+                        synchronized (Scan.selectedBlocks) {
+                            RenderUtil.updateAll(Scan.selectedBlocks, unloadedChunks);
+                        }
+                        //vibecode warning
+                    } else {
+                        RenderUtil.updateAll(Scan.selectedBlocks, Scan.unloadedChunks);
+                    }
+
+
                     Scan.renderDirty = false;
                     RenderUtil.onDataUpdated();
                 }

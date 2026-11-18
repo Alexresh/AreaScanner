@@ -1,5 +1,5 @@
 {
-  "areascanner.gui.title.configs": "areascanner by Obabok and Hopper4et",
+  "areascanner.gui.title.configs": "AreaScanner",
   "areascanner.gui.title.generic": "Основное",
   "areascanner.gui.title.hud": "Худ",
   "areascanner.gui.title.whitelists": "Вайтлисты",
@@ -68,6 +68,8 @@
   "areascanner.config.generic.name.mainHotkey": "Настройки",
   "areascanner.config.generic.comment.mainHotkey": "открывает это окно",
 
+  "areascanner.config.generic.name.obsidianPredictor": "Включить навайбкоженый порт Obsidian Predictor (автор оригинала EQUENOS-2)",
+  "areascanner.config.generic.comment.obsidianPredictor": "VIBECODE WARNING!",
 
 
   "areascanner.config.hud.name.hudEnable": "Худ",

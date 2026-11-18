@@ -9,6 +9,7 @@ import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.*;
+import fi.dy.masa.malilib.util.data.Color4f;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -25,6 +26,7 @@ import ru.obabok.client.Scan;
 import ru.obabok.client.gui.screens.ScanTaskScreen;
 import ru.obabok.client.models.BlockGroup;
 import ru.obabok.client.util.ConnectedBlockFinder;
+import ru.obabok.client.util.Lavobsidian.AsyncObsidianScanner;
 import ru.obabok.common.model.BlockArea;
 import ru.obabok.common.References;
 
@@ -75,8 +77,10 @@ public class RenderUtil {
 //            }
         }
 
+        boolean hasNormalRender = !renderChunksList.isEmpty() || !renderBlocksList.isEmpty();
+        boolean hasLavaRender = AsyncObsidianScanner.hasRenderableMarkers();
 
-        if(!renderChunksList.isEmpty() || !renderBlocksList.isEmpty()){
+        if(hasNormalRender || hasLavaRender){
             try {
 
                 context.matrices().pushPose();
@@ -86,6 +90,11 @@ public class RenderUtil {
                 prepareRenderChunks(context);
 
                 prepareRenderBlocksOptimized(context);
+                if(Config.Generic.OBSIDIAN_PREDICTOR.getBooleanValue()){
+                    //vibecode warning
+                    AsyncObsidianScanner.render(context);
+                    //vibecode warning
+                }
                 context.matrices().popPose();
                 renderAll(Minecraft.getInstance(), BLOCKS_RENDER, context.matrices());
             }catch (Exception ignored){
@@ -207,7 +216,7 @@ public class RenderUtil {
         }
     }
 
-    private static Vec3 getLookDirection(Quaternionf orientation) {
+    public static Vec3 getLookDirection(Quaternionf orientation) {
         org.joml.Vector3f forward = new org.joml.Vector3f(0, 0, -1);
         orientation.transform(forward);
         return new Vec3(forward.x, forward.y, forward.z);
@@ -539,4 +548,43 @@ public class RenderUtil {
         if(Config.Generic.MAIN_RENDER.getBooleanValue()) renderChunksList.addAll(chunkPos);
     }*/
 
+
+    //VIBECODE (dragons there)
+    public static void renderWaypointWithLOD(Matrix4fc matrix, BlockPos pos, Vec3 camera, Vec3 lookDirection, Color4f color) {
+        double relX = pos.getX() + 0.5 - camera.x;
+        double relY = pos.getY() + 0.5 - camera.y;
+        double relZ = pos.getZ() + 0.5 - camera.z;
+
+        double distXZ = Math.sqrt(relX * relX + relZ * relZ);
+        double distance = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
+
+        // Frustum check: don't cull if in front horizontally or in front 3D
+        if (distance > 0.1) {
+            double dot3D = (relX * lookDirection.x + relY * lookDirection.y + relZ * lookDirection.z) / distance;
+            double dotHoriz = (relX * lookDirection.x + relZ * lookDirection.z) / Math.max(0.001, distXZ);
+            if (dot3D < -0.35 && dotHoriz < -0.35) {
+                return;
+            }
+        }
+
+        int lod1 = Config.Generic.LOD1.getIntegerValue();
+        int lod2 = Config.Generic.LOD2.getIntegerValue();
+        int lodHorizon = Config.Generic.LOD2_HORIZON.getIntegerValue();
+
+        if (distXZ < lod1) {
+            // Close: full 3D filled box
+            newRenderFilledBox(matrix, pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1, camera, color.getIntValue());
+        } else if (distXZ < lod2) {
+            // Medium: 3D filled box
+            newRenderFilledBox(matrix, pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1, camera, color.getIntValue());
+        } else if (distXZ < lodHorizon) {
+            // Horizon: billboard at actual block + horizon beacon
+            addBillboardLOD(matrix, pos.getX(), pos.getY(), pos.getZ(), camera, color.getIntValue(), 2.0f, 2.0f);
+            addBillboardLOD(matrix, pos.getX(), camera.y, pos.getZ(), camera, color.getIntValue(), 1.5f, 4.0f);
+        } else {
+            // Distant (> lodHorizon): prominent beacon pillar on horizon + billboard at block
+            addBillboardLOD(matrix, pos.getX(), camera.y, pos.getZ(), camera, color.getIntValue(), 2.5f, 8.0f);
+            addBillboardLOD(matrix, pos.getX(), pos.getY(), pos.getZ(), camera, color.getIntValue(), 3.0f, 3.0f);
+        }
+    }
 }
