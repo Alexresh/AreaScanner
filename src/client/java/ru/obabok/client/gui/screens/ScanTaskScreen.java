@@ -20,8 +20,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.CommonColors;
 import net.minecraft.util.Util;
 import org.lwjgl.sdl.SDLScancode;
+import ru.obabok.client.Config;
 import ru.obabok.client.Scan;
 import ru.obabok.client.gui.widgets.ToggelableWidgedDropDownList;
+import ru.obabok.client.util.Lavobsidian.AsyncObsidianScanner;
 import ru.obabok.common.model.BlockArea;
 import ru.obabok.client.models.ScreenPlus;
 import ru.obabok.client.network.ClientNetwork;
@@ -251,6 +253,33 @@ public class ScanTaskScreen extends ScreenPlus {
         }).bounds(370, height - 30, 90, 20).build();
         loadStateBtn.active = !Scan.isProcessing();
         addRenderableWidget(loadStateBtn);
+
+        if(Config.Generic.OBSIDIAN_PREDICTOR.getBooleanValue()){
+            //vibecode warning
+            Button lavaScanButton = Button.builder(Component.literal("Lava scan"), btn -> {
+                if (minecraft.player == null || minecraft.level == null) return;
+                if (Scan.isProcessing()) {
+                    minecraft.player.sendSystemMessage(Component.literal("Stop the current scan first"));
+                    return;
+                }
+                BlockArea area = Scan.getArea();
+                if (area == null || area.isEmpty()) {
+                    minecraft.player.sendSystemMessage(Component.literal("Set a scan area first"));
+                    return;
+                }
+                AsyncObsidianScanner.startAsyncScan(minecraft.level, area);
+            }).bounds(20, height - 55, 75, 20).build();
+            lavaScanButton.active = !Scan.isProcessing();
+            addRenderableWidget(lavaScanButton);
+
+            Button clearLavaBtn = Button.builder(Component.literal("Clear lava"), btn -> {
+                AsyncObsidianScanner.stopAndClear();
+                minecraft.gui.setScreen(new ScanTaskScreen(parent, Scan.getArea()));
+            }).bounds(100, height - 55, 75, 20).build();
+            clearLavaBtn.active = AsyncObsidianScanner.canStopOrClear();
+            addRenderableWidget(clearLavaBtn);
+            //vibecode warning
+        }
 
         refreshFieldsFromSelection();
     }
