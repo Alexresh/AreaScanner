@@ -1,4 +1,4 @@
-package ru.obabok.client.util.Lavobsidian;
+package ru.obabok.client.util.ObsidianPredictor;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;

@@ -71,6 +71,21 @@
   "areascanner.config.generic.name.obsidianPredictor": "Enable  Vvibecoded port of Obsidian Predictor (original author: EQUENOS-2)",
   "areascanner.config.generic.comment.obsidianPredictor": "VIBECODE WARNING!",
 
+  "areascanner.config.generic.name.obsidianPredictorLavaColor": "[ObsPr] Lava color",
+  "areascanner.config.generic.comment.obsidianPredictorLavaColor": "",
+
+  "areascanner.config.generic.name.obsidianPredictorAncientDebrisColor": "[ObsPr] Ancient debris color",
+  "areascanner.config.generic.comment.obsidianPredictorAncientDebrisColor": "",
+
+  "areascanner.config.generic.name.obsidianPredictorTrialSpawnerColor": "[ObsPr] Trial spawner color",
+  "areascanner.config.generic.comment.obsidianPredictorTrialSpawnerColor": "",
+
+  "areascanner.config.generic.name.obsidianPredictorObsidianColor": "[ObsPr] Obsidian color",
+  "areascanner.config.generic.comment.obsidianPredictorObsidianColor": "",
+
+  "areascanner.config.generic.name.obsidianPredictorToughBlockColor": "[ObsPr] Tough block color",
+  "areascanner.config.generic.comment.obsidianPredictorToughBlockColor": "",
+
 
   "areascanner.config.hud.name.hudEnable": "Hud",
   "areascanner.config.hud.comment.hudEnable": "Hud rendering",

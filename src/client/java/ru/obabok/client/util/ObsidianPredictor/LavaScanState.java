@@ -1,4 +1,4 @@
-package ru.obabok.client.util.Lavobsidian;
+package ru.obabok.client.util.ObsidianPredictor;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 
 public class LavaScanState {
     private static final ExecutorService SAVE_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "Lavobsidian-Save-Worker");
+        Thread t = new Thread(r, "ObsidianPredictor-Save-Worker");
         t.setDaemon(true);
         return t;
     });
@@ -61,7 +61,7 @@ public class LavaScanState {
             LavaMarker.Type markerType = type != null ? type : LavaMarker.Type.LAVA_WAYPOINT;
             Set<BlockPos> lava = trackedLava != null ? trackedLava : Collections.emptySet();
             Set<BlockPos> obsidian = predictedObsidian != null ? predictedObsidian : Collections.emptySet();
-            return new LavaMarker(pos, markerType, markerType.defaultColor, lava, obsidian);
+            return new LavaMarker(pos, markerType, lava, obsidian);
         }
     }
 
