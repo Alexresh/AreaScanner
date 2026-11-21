@@ -1,6 +1,7 @@
-package ru.obabok.client.util.Lavobsidian;
+package ru.obabok.client.util.ObsidianPredictor;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import fi.dy.masa.malilib.util.data.Color4f;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockBox;
@@ -28,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AsyncObsidianScanner {
+public class AsyncObsidianPredictor {
     private static final AtomicBoolean running = new AtomicBoolean();
     private static final AtomicLong generation = new AtomicLong();
 
@@ -102,7 +103,7 @@ public class AsyncObsidianScanner {
         if (!running.compareAndSet(false, true)) {
             Minecraft.getInstance().execute(() -> {
                 if (Minecraft.getInstance().player != null) {
-                    Minecraft.getInstance().player.displayClientMessage(Component.literal("[Lavobsidian] A scan is already running"), false);
+                    Minecraft.getInstance().player.displayClientMessage(Component.literal("[Obsidian Predictor] A scan is already running"), false);
                 }
             });
             return;
@@ -120,7 +121,7 @@ public class AsyncObsidianScanner {
             if (pendingScan.allChunksCaptured()) {
                 beginScan(pendingScan, runId);
             } else {
-                report("[Lavobsidian] Waiting for chunks in the scan area. Visit the area to load them.");
+                report("[Obsidian Predictor] Waiting for chunks in the scan area. Visit the area to load them.");
             }
         } catch (RuntimeException exception) {
             if (generation.get() != runId) return;
@@ -128,7 +129,7 @@ public class AsyncObsidianScanner {
             unloadedChunks.clear();
             Scan.renderDirty = true;
             running.set(false);
-            report("[Lavobsidian] Could not prepare scan: " + exception.getMessage());
+            report("[Obsidian Predictor] Could not prepare scan: " + exception.getMessage());
         }
     }
 
@@ -143,7 +144,7 @@ public class AsyncObsidianScanner {
             unloadedChunks.clear();
             Scan.renderDirty = true;
             running.set(false);
-            report("[Lavobsidian] Pending scan cancelled because the world changed");
+            report("[Obsidian Predictor] Pending scan cancelled because the world changed");
             return;
         }
         if (world != request.world || !request.captureChunk(chunkPos)) return;
@@ -159,7 +160,7 @@ public class AsyncObsidianScanner {
         pendingScan = null;
         unloadedChunks.clear();
         Scan.renderDirty = true;
-        report("[Lavobsidian] All scan chunks captured. Starting prediction.");
+        report("[Obsidian Predictor] All scan chunks captured. Starting prediction.");
 
         int totalLayers = request.regions.stream().mapToInt(region -> region.height).sum();
         AtomicInteger processedLayers = new AtomicInteger();
@@ -185,7 +186,7 @@ public class AsyncObsidianScanner {
                                 int previousPercent = lastReportedPercent.get();
                                 if (roundedPercent > previousPercent
                                         && lastReportedPercent.compareAndSet(previousPercent, roundedPercent)) {
-                                    report("[Lavobsidian] Progress: " + roundedPercent + "%");
+                                    report("[Obsidian Predictor] Progress: " + roundedPercent + "%");
                                 }
                             }
                     );
@@ -201,7 +202,7 @@ public class AsyncObsidianScanner {
                     running.set(false);
                     unloadedChunks.clear();
                     Scan.renderDirty = true;
-                    report("[Lavobsidian] Scan failed: " + exception.getMessage());
+                    report("[Obsidian Predictor] Scan failed: " + exception.getMessage());
                 });
                 return;
             }
@@ -218,7 +219,7 @@ public class AsyncObsidianScanner {
                     rememberedWaterFlows.addAll(scannedFlows);
                     markerDimension = request.world.dimension().identifier().toString();
                     saveCurrentState();
-                    report("[Lavobsidian] Scan complete. Found " + waypoints.size() + " blocks to remove");
+                    report("[Obsidian Predictor] Scan complete. Found " + waypoints.size() + " blocks to remove");
                 } finally {
                     if (generation.get() == runId) {
                         unloadedChunks.clear();
@@ -226,7 +227,7 @@ public class AsyncObsidianScanner {
                     }
                 }
             });
-        }, "Lavobsidian-Predictor");
+        }, "Obsidian-Predictor");
 
         scanThread.setDaemon(true);
         scanThread.start();
@@ -276,7 +277,7 @@ public class AsyncObsidianScanner {
 
                 int remainingNearby = countNearbyWaypoints(marker.pos, 16.0, 10.0);
                 if (remainingNearby > 0) {
-                    reportActionBar("[Lavobsidian] Cleared waypoint (" + remainingNearby + " nearby remaining)");
+                    reportActionBar("[Obsidian Predictor] Cleared waypoint (" + remainingNearby + " nearby remaining)");
                 } else {
                     // All nearby waypoints in this area have been removed!
                     if (now - recentRechecks.getOrDefault(marker.pos, 0L) >= 4000L) {
@@ -292,7 +293,7 @@ public class AsyncObsidianScanner {
                             recentRechecks.put(marker.pos, now);
                         }
                     } else {
-                        reportActionBar("[Lavobsidian] Cleared all nearby waypoints");
+                        reportActionBar("[Obsidian Predictor] Cleared all nearby waypoints");
                     }
                 }
             }
@@ -415,14 +416,14 @@ public class AsyncObsidianScanner {
             for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
                 net.minecraft.world.level.chunk.ChunkAccess chunk = world.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false);
                 if (chunk == null) {
-                    reportActionBar("[Lavobsidian] Cleared all nearby waypoints");
+                    reportActionBar("[Obsidian Predictor] Cleared all nearby waypoints");
                     return;
                 }
                 chunks[(cx - minChunkX) * numChunksZ + (cz - minChunkZ)] = chunk;
             }
         }
 
-        reportActionBar("[Lavobsidian] Cleared all nearby waypoints. Rechecking area...");
+        reportActionBar("[Obsidian Predictor] Cleared all nearby waypoints. Rechecking area...");
 
         int width = maxX - minX + 1;
         int height = maxY - minY + 1;
@@ -494,9 +495,9 @@ public class AsyncObsidianScanner {
                     saveCurrentState();
 
                     if (newFormationsCount > 0) {
-                        reportActionBar("[Lavobsidian] Recheck found " + newFormationsCount + " new obsidian formation(s)!");
+                        reportActionBar("[Obsidian Predictor] Recheck found " + newFormationsCount + " new obsidian formation(s)!");
                     } else {
-                        reportActionBar("[Lavobsidian] Area clear (no new obsidian formed)");
+                        reportActionBar("[Obsidian Predictor] Area clear (no new obsidian formed)");
                     }
                 } finally {
                     isRechecking.set(false);
@@ -531,14 +532,14 @@ public class AsyncObsidianScanner {
             double relX = marker.pos.getX() + 0.5 - camera.x;
             double relZ = marker.pos.getZ() + 0.5 - camera.z;
             double distXZ = Math.sqrt(relX * relX + relZ * relZ);
-
+            Color4f color = LavaMarker.getMarkerColor(marker.type);
             if (marker.type == LavaMarker.Type.LAVA_WAYPOINT && marker.trackedLavaBlocks.size() > 1 && distXZ <= 32.0) {
                 // When nearby, highlight all remaining lava blocks that belong to this formation
                 for (BlockPos lavaPos : marker.trackedLavaBlocks) {
-                    RenderUtil.renderWaypointWithLOD(matrices.last().pose(), lavaPos, camera, lookDirection, marker.color);
+                    RenderUtil.renderWaypointWithLOD(matrices.last().pose(), lavaPos, camera, lookDirection, color);
                 }
             } else {
-                RenderUtil.renderWaypointWithLOD(matrices.last().pose(), marker.pos, camera, lookDirection, marker.color);
+                RenderUtil.renderWaypointWithLOD(matrices.last().pose(), marker.pos, camera, lookDirection, color);
             }
         }
     }
@@ -610,6 +611,6 @@ public class AsyncObsidianScanner {
         markerDimension = null;
         LavaScanState.delete();
         Scan.renderDirty = true;
-        if (removed > 0) reportActionBar("[Lavobsidian] Cleared all lava markers");
+        if (removed > 0) reportActionBar("[Obsidian Predictor] Cleared all lava markers");
     }
 }

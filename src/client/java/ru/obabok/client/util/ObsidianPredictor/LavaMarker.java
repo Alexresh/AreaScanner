@@ -1,7 +1,8 @@
-package ru.obabok.client.util.Lavobsidian;
+package ru.obabok.client.util.ObsidianPredictor;
 
 import fi.dy.masa.malilib.util.data.Color4f;
 import net.minecraft.core.BlockPos;
+import ru.obabok.client.Config;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -11,30 +12,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LavaMarker {
     public enum Type {
         // Alpha ~0.85 (0xDD) for waypoints and key targets
-        LAVA_WAYPOINT(Color4f.fromColor(0x80FF2222)),          // Red: Main waypoint / lava pool center
-        PREDICTED_OBSIDIAN(Color4f.fromColor(0x80FF6600)),     // Fiery Orange: Exact block turning into obsidian
-        ANCIENT_DEBRIS(Color4f.fromColor(0x80E5A00D)),         // Amber Gold
-        TRIAL_SPAWNER_VAULT(Color4f.fromColor(0x8000E5FF)),    // Electric Cyan
-        OBSIDIAN_BLOCK(Color4f.fromColor(0x807A18D1)),         // Deep Purple
-        TOUGH_BLOCK(Color4f.fromColor(0x80708090));            // Slate Gray
-
-        public final Color4f defaultColor;
-
-        Type(Color4f defaultColor) {
-            this.defaultColor = defaultColor;
-        }
+        LAVA_WAYPOINT,          // Red: Main waypoint / lava pool center
+        ANCIENT_DEBRIS,         // Amber Gold
+        TRIAL_SPAWNER_VAULT,    // Electric Cyan
+        OBSIDIAN_BLOCK,         // Deep Purple
+        TOUGH_BLOCK         // Slate Gray
     }
 
     public volatile BlockPos pos;
     public final Type type;
-    public final Color4f color;
     public final Set<BlockPos> trackedLavaBlocks;
     public final Set<BlockPos> predictedObsidianBlocks;
 
-    public LavaMarker(BlockPos pos, Type type, Color4f color, Set<BlockPos> trackedLavaBlocks, Set<BlockPos> predictedObsidianBlocks) {
+    public LavaMarker(BlockPos pos, Type type, Set<BlockPos> trackedLavaBlocks, Set<BlockPos> predictedObsidianBlocks) {
         this.pos = pos;
         this.type = type;
-        this.color = color != null ? color : type.defaultColor;
         this.trackedLavaBlocks = ConcurrentHashMap.newKeySet();
         if (trackedLavaBlocks != null) {
             this.trackedLavaBlocks.addAll(trackedLavaBlocks);
@@ -43,7 +35,20 @@ public class LavaMarker {
     }
 
     public LavaMarker(BlockPos pos, Type type) {
-        this(pos, type, type.defaultColor, Collections.emptySet(), Collections.emptySet());
+        this(pos, type, Collections.emptySet(), Collections.emptySet());
+    }
+
+    public static Color4f getMarkerColor(LavaMarker.Type type) {
+        return switch (type)
+        {
+            case LAVA_WAYPOINT -> Config.Generic.OBSIDIAN_PREDICTOR_LAVA_COLOR.getColor();
+            case ANCIENT_DEBRIS -> Config.Generic.OBSIDIAN_PREDICTOR_ANCIENT_DEBRIS_COLOR.getColor();
+            case TRIAL_SPAWNER_VAULT -> Config.Generic.OBSIDIAN_PREDICTOR_TRIAL_SPAWNER_VAULT_COLOR.getColor();
+            case OBSIDIAN_BLOCK -> Config.Generic.OBSIDIAN_PREDICTOR_OBSIDIAN_COLOR.getColor();
+            case TOUGH_BLOCK -> Config.Generic.OBSIDIAN_PREDICTOR_TOUGH_BLOCK_COLOR.getColor();
+            case null -> Config.Generic.SELECTED_BLOCKS_COLOR.getColor();
+        };
+
     }
 
     @Override
