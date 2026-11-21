@@ -53,6 +53,11 @@ public class Config implements IConfigHandler {
         public static final ConfigSplitter SPLITTER = new ConfigSplitter();
 
         public static final ConfigBoolean OBSIDIAN_PREDICTOR = new ConfigBoolean("obsidianPredictor", false).apply(GENERIC_KEY);
+        public static final ConfigColor OBSIDIAN_PREDICTOR_LAVA_COLOR = new ConfigColor("obsidianPredictorLavaColor", "#30FF2222").apply(GENERIC_KEY);
+        public static final ConfigColor OBSIDIAN_PREDICTOR_ANCIENT_DEBRIS_COLOR = new ConfigColor("obsidianPredictorAncientDebrisColor", "#30E5A00D").apply(GENERIC_KEY);
+        public static final ConfigColor OBSIDIAN_PREDICTOR_TRIAL_SPAWNER_VAULT_COLOR = new ConfigColor("obsidianPredictorTrialSpawnerColor", "#3000E5FF").apply(GENERIC_KEY);
+        public static final ConfigColor OBSIDIAN_PREDICTOR_OBSIDIAN_COLOR = new ConfigColor("obsidianPredictorObsidianColor", "#307A18D1").apply(GENERIC_KEY);
+        public static final ConfigColor OBSIDIAN_PREDICTOR_TOUGH_BLOCK_COLOR = new ConfigColor("obsidianPredictorToughBlockColor", "#30708090").apply(GENERIC_KEY);
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 UNLOADED_CHUNK_MAX_DISTANCE,
@@ -92,7 +97,12 @@ public class Config implements IConfigHandler {
                 SPLITTER,
                 SPLITTER,
                 SPLITTER,
-                OBSIDIAN_PREDICTOR
+                OBSIDIAN_PREDICTOR,
+                OBSIDIAN_PREDICTOR_LAVA_COLOR,
+                OBSIDIAN_PREDICTOR_ANCIENT_DEBRIS_COLOR,
+                OBSIDIAN_PREDICTOR_TRIAL_SPAWNER_VAULT_COLOR,
+                OBSIDIAN_PREDICTOR_OBSIDIAN_COLOR,
+                OBSIDIAN_PREDICTOR_TOUGH_BLOCK_COLOR
         );
     }
 

@@ -71,6 +71,21 @@
   "areascanner.config.generic.name.obsidianPredictor": "Включить навайбкоженый порт Obsidian Predictor (автор оригинала EQUENOS-2)",
   "areascanner.config.generic.comment.obsidianPredictor": "VIBECODE WARNING!",
 
+  "areascanner.config.generic.name.obsidianPredictorLavaColor": "[ObsPr] Цвет лавы",
+  "areascanner.config.generic.comment.obsidianPredictorLavaColor": "",
+
+  "areascanner.config.generic.name.obsidianPredictorAncientDebrisColor": "[ObsPr] Цвет древних обломков",
+  "areascanner.config.generic.comment.obsidianPredictorAncientDebrisColor": "",
+
+  "areascanner.config.generic.name.obsidianPredictorTrialSpawnerColor": "[ObsPr] Цвет спаунера испытаний",
+  "areascanner.config.generic.comment.obsidianPredictorTrialSpawnerColor": "",
+
+  "areascanner.config.generic.name.obsidianPredictorObsidianColor": "[ObsPr] Цвет обсидиана",
+  "areascanner.config.generic.comment.obsidianPredictorObsidianColor": "",
+
+  "areascanner.config.generic.name.obsidianPredictorToughBlockColor": "[ObsPr] Цвет крепких блоков",
+  "areascanner.config.generic.comment.obsidianPredictorToughBlockColor": "",
+
 
   "areascanner.config.hud.name.hudEnable": "Худ",
   "areascanner.config.hud.comment.hudEnable": "Отображение худа",

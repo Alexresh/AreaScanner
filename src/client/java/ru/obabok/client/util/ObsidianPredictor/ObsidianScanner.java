@@ -1,19 +1,15 @@
-package ru.obabok.client.util.Lavobsidian;
+package ru.obabok.client.util.ObsidianPredictor;
 
 import com.google.gson.Gson;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.phys.AABB;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -337,8 +333,7 @@ public class ObsidianScanner {
 
             for (Point2 point : selected) {
                 BlockPos waypointPos = new BlockPos(minX + point.x, y, minZ + point.z);
-                waypoints.add(new LavaMarker(waypointPos, LavaMarker.Type.LAVA_WAYPOINT,
-                        LavaMarker.Type.LAVA_WAYPOINT.defaultColor, clusterBlocks, clusterBlocks));
+                waypoints.add(new LavaMarker(waypointPos, LavaMarker.Type.LAVA_WAYPOINT, clusterBlocks, clusterBlocks));
             }
         }
     }

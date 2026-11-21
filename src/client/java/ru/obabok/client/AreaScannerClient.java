@@ -18,7 +18,7 @@ import net.minecraft.world.level.ChunkPos;
 import ru.obabok.client.gui.screens.VibeCodeAlertScreen;
 import ru.obabok.client.render.HudRender;
 import ru.obabok.client.render.RenderUtil;
-import ru.obabok.client.util.Lavobsidian.AsyncObsidianScanner;
+import ru.obabok.client.util.ObsidianPredictor.AsyncObsidianPredictor;
 import ru.obabok.common.model.BlockArea;
 import ru.obabok.client.network.ClientNetwork;
 import ru.obabok.client.util.*;
@@ -60,7 +60,7 @@ public class AreaScannerClient implements ClientModInitializer {
 			});
 
 			ClientChunkEvents.CHUNK_LOAD.register((clientWorld, worldChunk) -> {
-				AsyncObsidianScanner.onChunkLoaded(clientWorld, worldChunk.getPos());
+				AsyncObsidianPredictor.onChunkLoaded(clientWorld, worldChunk.getPos());
 				BlockArea area = Scan.getArea();
 				if (area == null) return;
 
@@ -75,7 +75,7 @@ public class AreaScannerClient implements ClientModInitializer {
 
 			ClientTickEvents.END_CLIENT_TICK.register(client -> {
 				if (client.player != null && client.level != null) {
-					AsyncObsidianScanner.tick(client.level);
+					AsyncObsidianPredictor.tick(client.level);
 				}
 			});
 
