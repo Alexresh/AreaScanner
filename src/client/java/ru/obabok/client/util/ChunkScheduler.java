@@ -6,6 +6,7 @@ import net.minecraft.world.level.chunk.status.ChunkStatus;
 import ru.obabok.client.Config;
 import ru.obabok.client.Scan;
 import ru.obabok.client.render.RenderUtil;
+import ru.obabok.client.util.ObsidianPredictor.AsyncObsidianPredictor;
 import ru.obabok.common.References;
 
 import java.util.HashSet;
@@ -61,7 +62,7 @@ public class ChunkScheduler {
                     if(Config.Generic.OBSIDIAN_PREDICTOR.getBooleanValue()){
                         //vibecode warning
                         HashSet<ChunkPos> unloadedChunks = new HashSet<>(Scan.unloadedChunks);
-                        unloadedChunks.addAll(ru.obabok.client.util.Lavobsidian.AsyncObsidianScanner.getUnloadedChunks());
+                        unloadedChunks.addAll(AsyncObsidianPredictor.getUnloadedChunks());
                         synchronized (Scan.selectedBlocks) {
                             RenderUtil.updateAll(Scan.selectedBlocks, unloadedChunks);
                         }

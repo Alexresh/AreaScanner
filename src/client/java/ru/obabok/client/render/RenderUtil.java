@@ -27,7 +27,7 @@ import ru.obabok.client.Scan;
 import ru.obabok.client.gui.screens.ScanTaskScreen;
 import ru.obabok.client.models.BlockGroup;
 import ru.obabok.client.util.ConnectedBlockFinder;
-import ru.obabok.client.util.Lavobsidian.AsyncObsidianScanner;
+import ru.obabok.client.util.ObsidianPredictor.AsyncObsidianPredictor;
 import ru.obabok.common.model.BlockArea;
 import ru.obabok.common.References;
 
@@ -78,7 +78,7 @@ public class RenderUtil {
         }
 
         boolean hasNormalRender = !renderChunksList.isEmpty() || !renderBlocksList.isEmpty();
-        boolean hasLavaRender = AsyncObsidianScanner.hasRenderableMarkers();
+        boolean hasLavaRender = AsyncObsidianPredictor.hasRenderableMarkers();
 
         if(hasNormalRender || hasLavaRender){
             try {
@@ -92,7 +92,7 @@ public class RenderUtil {
                 prepareRenderBlocksOptimized(context);
                 if(Config.Generic.OBSIDIAN_PREDICTOR.getBooleanValue()){
                     //vibecode warning
-                    AsyncObsidianScanner.render(context);
+                    AsyncObsidianPredictor.render(context);
                     //vibecode warning
                 }
                 context.poseStack().popPose();
