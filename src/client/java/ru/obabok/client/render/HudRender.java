@@ -379,7 +379,7 @@ public class HudRender {
                 //vibecode warning
                 for (int i = 0; i < preparedLavaMarkers.size(); i++) {
                     LavaMarker marker = preparedLavaMarkers.get(i);
-                    int markerColor = Config.Generic.SELECTED_BLOCKS_COLOR.getColor().withAlpha(alpha).getIntValue();
+                    int markerColor = LavaMarker.getMarkerColor(marker.type).withAlpha(alpha).getIntValue();
                     renderDot(guiGraphicsExtractor, camera, marker.pos.getX() + 0.5, marker.pos.getY() + 0.5, marker.pos.getZ() + 0.5, screenWidth, screenHeight, markerColor);
                 }
                 //vibecode warning
