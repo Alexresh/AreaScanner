@@ -491,7 +491,7 @@ public class RenderUtil {
     }
 
     public static void lookRandomSelectedBlock(){
-        if(client.player == null) return;
+        if(client.player == null || renderBlocksList.isEmpty()) return;
         Random random = new Random();
         BlockPos pos = renderBlocksList.get(random.nextInt(renderBlocksList.size()));
         client.player.lookAt(EntityAnchorArgument.Anchor.EYES, new Vec3(pos.getX(), pos.getY(), pos.getZ()));
