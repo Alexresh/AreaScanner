@@ -55,6 +55,7 @@ public class WhitelistManager {
 
     public static void removeFromWhitelist(String filename, WhitelistItem item) {
         Whitelist whitelist = loadData(filename);
+        if(whitelist == null) return;
         whitelist.whitelist.remove(item);
         saveData(whitelist, filename);
     }
@@ -84,6 +85,7 @@ public class WhitelistManager {
 
     public static int printWhitelist(LocalPlayer player, String whitelist) {
         Whitelist printWhitelist = loadData(whitelist);
+        if(printWhitelist == null) return 0;
         player.sendSystemMessage(Component.literal("Whitelist " + whitelist));
         for (WhitelistItem whitelistItem : printWhitelist.whitelist) {
             player.sendSystemMessage(Component.literal(whitelistItem.toString()));
