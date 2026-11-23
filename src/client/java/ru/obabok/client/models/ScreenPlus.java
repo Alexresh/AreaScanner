@@ -28,15 +28,14 @@ public class ScreenPlus extends Screen {
 
     public boolean onMouseClicked(MouseButtonEvent event)
     {
-        boolean handled = false;
         for (WidgetBase widget : this.widgets)
         {
-            if (widget.isMouseOver((int) event.x(), (int)event.y()) && widget.onMouseClicked(event, false))
+            if (widget.onMouseClicked(event, false))
             {
-                handled = true;
+                return true;
             }
         }
-        return handled;
+        return false;
     }
 
     @Override
@@ -79,7 +78,7 @@ public class ScreenPlus extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
-        onMouseClicked(mouseButtonEvent);
+        if(onMouseClicked(mouseButtonEvent)) return true;
         return super.mouseClicked(mouseButtonEvent, bl);
     }
 
